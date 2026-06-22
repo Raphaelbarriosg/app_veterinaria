@@ -1,0 +1,94 @@
+# ============================================
+# Archivos ignorados por Docker
+# ============================================
+
+# Dependencias de Node
+node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Build artifacts
+dist
+coverage
+.build
+.out
+.next
+.nuxt
+
+# Logs
+logs
+*.log
+
+# Runtime data
+uploads
+tmp
+temp
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test artifacts
+test-results
+jest-coverage
+
+# Prisma
+prisma/migrations
+!prisma/schema.prisma
+
+# Docker
+Dockerfile.dev
+docker-compose.*.yml
+!docker-compose.yml
+!docker-compose.dev.yml
+
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+DEPLOYMENT.md
+*.pdf
+*.docx
+
+# Source maps
+*.map
+
+# TypeScript cache
+tsconfig.tsbuildinfo
+
+# NestJS cache
+.nest
+
+# Package lock
+package-lock.json
+yarn.lock
+
+# Backup files
+*.bak
+*.backup
+
+# Temporary files
+*.tmp
+*.temp
+
+# Certificates
+*.pem
+*.crt
+*.key

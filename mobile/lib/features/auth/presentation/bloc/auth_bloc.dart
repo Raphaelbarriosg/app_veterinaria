@@ -1,0 +1,82 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../data/repositories/auth_repository.dart';
+import 'auth_event.dart';
+import 'auth_state.dart';
+
+class AuthBloc extends Bloc<AuthEvent, AuthState> {
+  final AuthRepository _authRepository;
+
+  AuthBloc(this._authRepository) : super(AuthInitial()) {
+    on<CheckAuthStatus>(_onCheckAuthStatus);
+    on<LoginRequested>(_onLoginRequested);
+    on<RegisterRequested>(_onRegisterRequested);
+    on<LogoutRequested>(_onLogoutRequested);
+  }
+
+  Future<void> _onCheckAuthStatus(CheckAuthStatus event, Emitter<AuthState> emit) async {
+    emit(AuthLoading());
+    try {
+      final hasSession = await _authRepository.hasActiveSession();
+      if (hasSession) {
+        final user = await _authRepository.getProfile();
+        emit(Authenticated(user));
+      } else {
+        emit(Unauthenticated());
+      }
+    } catch (e) {
+      // Si falla obtener el perfil, consideramos la sesión como expirada/inválida
+      await _authRepository.logout();
+      emit(Unauthenticated());
+    }
+  }
+
+  Future<void> _onLoginRequested(LoginRequested event, Emitter<AuthState> emit) async {
+    emit(AuthLoading());
+    try {
+      final user = await _authRepository.login(
+        email: event.email,
+        password: event.password,
+      );
+      emit(Authenticated(user));
+    } catch (e) {
+      emit(AuthError(_parseError(e)));
+    }
+  }
+
+  Future<void> _onRegisterRequested(RegisterRequested event, Emitter<AuthState> emit) async {
+    emit(AuthLoading());
+    try {
+      final user = await _authRepository.register(
+        email: event.email,
+        password: event.password,
+        name: event.name,
+        phone: event.phone,
+        role: event.role,
+      );
+      emit(Authenticated(user));
+    } catch (e) {
+      emit(AuthError(_parseError(e)));
+    }
+  }
+
+  Future<void> _onLogoutRequested(LogoutRequested event, Emitter<AuthState> emit) async {
+    emit(AuthLoading());
+    try {
+      await _authRepository.logout();
+      emit(Unauthenticated());
+    } catch (e) {
+      emit(AuthError('Error al cerrar sesión'));
+    }
+  }
+
+  String _parseError(dynamic e) {
+    // Si es un error de Dio, podemos extraer el mensaje de la respuesta
+    if (e.toString().contains('401') || e.toString().contains('Unauthorized')) {
+      return 'Credenciales inválidas. Verifica tu correo o contraseña.';
+    }
+    if (e.toString().contains('Conflict') || e.toString().contains('409')) {
+      return 'El correo electrónico ya está registrado.';
+    }
+    return 'Ocurrió un error. Inténtalo de nuevo más tarde.';
+  }
+}

@@ -1,0 +1,18 @@
+Actúa como un Arquitecto de Software Full-Stack. Nuestro MVP de seguimiento médico veterinario en NestJS, Postgres y Flutter ya funciona. Ahora vamos a escalar el ecosistema agregando la "Fase 2: Red de Emergencias, Traslados Rápidos y Donantes de Sangre".
+
+Necesitamos expandir tanto el Backend como el Frontend para soportar estas nuevas interacciones comunitarias y geolocalizadas.
+
+### 1. NUEVAS ENTIDADES EN LA BASE DE DATOS (PostgreSQL)
+Necesito que diseñes las migraciones o extensiones para:
+- blood_donors: id (UUID), pet_id (FK), blood_type, last_donation_date, is_available (BOOLEAN).
+- transport_providers: id (UUID), user_id (FK), vehicle_type (MOTO, CARRO, VAN), is_active (BOOLEAN), current_lat, current_lng.
+- emergency_alerts: id (UUID), emitter_id (FK -> users.id), pet_id (FK), alert_type (BLOOD_NEEDED, URGENT_TRANSPORT), status (OPEN, MATCHED, CLOSED), lat, lng.
+
+### 2. REQUERIMIENTOS FUNCIONALES
+- Backend (NestJS): Endpoints para activar una alerta de emergencia. Lógica de geolocalización básica (PostGIS o consultas matemáticas de radio) para encontrar donantes compatibles o transportistas activos en un radio de 'X' kilómetros. Disparar notificaciones push masivas a los usuarios que cumplan con el criterio de cercanía.
+- Frontend (Flutter): El rol OWNER ahora tiene un "Botón de Pánico". Al presionarlo, selecciona si necesita transporte urgente o un donante de sangre, captura su ubicación GPS actual y emite la alerta. Se debe diseñar una vista de mapa (ej. google_maps_flutter) para que el transportista o donante vea la ruta hacia la emergencia.
+
+### 3. TU TAREA
+1. Genera el diseño del esquema de base de datos extendido (Prisma o TypeORM) para estas tres nuevas entidades.
+2. Escribe el servicio en NestJS encargado de procesar una emergencia y filtrar los proveedores/donantes en un radio de cercanía geográfica.
+3. Explica cómo estructurar el listener de eventos en Flutter para recibir la alerta push en tiempo real.

@@ -1,0 +1,237 @@
+// ============================================
+// Prisma Schema — Ecosistema Veterinario
+// Versión: 6.2.1
+// Base de datos: PostgreSQL 17+
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]  // Para extensiones de PostgreSQL
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  extensions = [pgcrypto, uuidOssp(map: "uuid-ossp")]  // Extensiones PostgreSQL
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum Role {
+  VET
+  OWNER
+  ADMIN  // Futura funcionalidad
+}
+
+enum TreatmentStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  PAUSED
+}
+
+enum PetSpecies {
+  DOG
+  CAT
+  BIRD
+  RODENT
+  REPTILE
+  OTHER
+}
+
+// ============================================
+// MODELS
+// ============================================
+
+model User {
+  id            String   @id @default(uuid()) @db.Uuid
+  email         String   @unique
+  passwordHash  String   @map("password_hash")
+  name          String
+  phone         String?  @db.VarChar(20)
+  role          Role
+  avatarUrl     String?  @map("avatar_url")
+  isActive      Boolean  @default(true) @map("is_active")
+  lastLogin     DateTime? @map("last_login")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  pets          Pet[]         @relation("OwnerPets")
+  treatments    Treatment[]   @relation("VetTreatments")
+
+  // Indexes
+  @@index([email])
+  @@index([role])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model Pet {
+  id         String     @id @default(uuid()) @db.Uuid
+  ownerId    String     @map("owner_id") @db.Uuid
+  name       String     @db.VarChar(100)
+  species    PetSpecies
+  breed      String?    @db.VarChar(100)
+  weight     Decimal?   @db.Decimal(5, 2)  // kg con 2 decimales
+  birthDate  DateTime?  @map("birth_date")
+  color      String?    @db.VarChar(50)
+  microchip  String?    @unique @db.VarChar(50)
+  notes      String?    @db.Text
+  isActive   Boolean    @default(true) @map("is_active")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  owner      User        @relation("OwnerPets", fields: [ownerId], references: [id], onDelete: Cascade)
+  treatments Treatment[]
+
+  // Indexes
+  @@index([ownerId])
+  @@index([species])
+  @@index([name])
+  @@unique([name, ownerId], name: "pet_name_owner_unique")
+  @@map("pets")
+}
+
+model Treatment {
+  id         String          @id @default(uuid()) @db.Uuid
+  vetId      String          @map("vet_id") @db.Uuid
+  petId      String          @map("pet_id") @db.Uuid
+  diagnosis  String          @db.Text
+  notes      String?         @db.Text
+  startDate  DateTime        @map("start_date")
+  endDate    DateTime?       @map("end_date")
+  status     TreatmentStatus @default(ACTIVE)
+  priority   Int             @default(1) @db.SmallInt  // 1-5, 5 es más urgente
+  createdAt  DateTime        @default(now()) @map("created_at")
+  updatedAt  DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  vet        User              @relation("VetTreatments", fields: [vetId], references: [id], onDelete: Cascade)
+  pet        Pet               @relation(fields: [petId], references: [id], onDelete: Cascade)
+  rules      TreatmentRule[]
+  dailyLogs  DailyLog[]
+
+  // Indexes
+  @@index([petId])
+  @@index([vetId])
+  @@index([status])
+  @@index([priority])
+  @@index([startDate])
+  @@index([createdAt])
+  @@map("treatments")
+}
+
+model TreatmentRule {
+  id             String    @id @default(uuid()) @db.Uuid
+  treatmentId    String    @map("treatment_id") @db.Uuid
+  medicineName   String    @map("medicine_name") @db.VarChar(200)
+  dosage         String    @db.VarChar(100)
+  frequencyHours Int       @map("frequency_hours")
+  requirePhoto   Boolean   @default(false) @map("require_photo")
+  notes          String?   @db.Text
+  startTime      DateTime? @map("start_time")  // Hora específica para primera dosis
+  isActive       Boolean   @default(true) @map("is_active")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  treatment      Treatment @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
+
+  // Indexes
+  @@index([treatmentId])
+  @@index([isActive])
+  @@index([requirePhoto])
+  @@map("treatment_rules")
+}
+
+model DailyLog {
+  id             String    @id @default(uuid()) @db.Uuid
+  treatmentId    String    @map("treatment_id") @db.Uuid
+  registeredAt   DateTime  @default(now()) @map("registered_at")
+  medicineTaken  Boolean   @default(false) @map("medicine_taken")
+  appetiteLevel  Int       @map("appetite_level") @db.SmallInt  // 1-5
+  energyLevel    Int       @map("energy_level") @db.SmallInt    // 1-5
+  painLevel      Int?      @map("pain_level") @db.SmallInt      // 1-10
+  temperature    Decimal?  @db.Decimal(4, 1)                    // °C con 1 decimal
+  alarmSigns     String?   @map("alarm_signs") @db.Text
+  observations   String?   @db.Text
+  imageUrl       String?   @map("image_url")
+  vetNotes       String?   @map("vet_notes") @db.Text
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  treatment      Treatment @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
+
+  // Indexes
+  @@index([treatmentId, registeredAt])
+  @@index([registeredAt])
+  @@index([medicineTaken])
+  @@map("daily_logs")
+}
+
+// ============================================
+// FUTURE MODELS (COMENTADOS PARA MVP)
+// ============================================
+
+/*
+model Appointment {
+  id        String   @id @default(uuid())
+  petId     String
+  vetId     String
+  date      DateTime
+  type      String   // Consulta, Vacuna, Cirugía, etc.
+  status    String   // Programada, Confirmada, Completada, Cancelada
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  pet       Pet      @relation(fields: [petId], references: [id])
+  vet       User     @relation(fields: [vetId], references: [id])
+  
+  @@index([petId])
+  @@index([vetId])
+  @@index([date])
+}
+
+model Vaccine {
+  id          String   @id @default(uuid())
+  petId       String
+  name        String
+  date        DateTime
+  nextDate    DateTime?
+  brand       String?
+  batchNumber String?
+  vetId       String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  pet         Pet      @relation(fields: [petId], references: [id])
+  vet         User?    @relation(fields: [vetId], references: [id])
+  
+  @@index([petId])
+  @@index([date])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String   // Recordatorio, Alerta, Sistema
+  title     String
+  message   String
+  data      Json?    // Datos adicionales
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+}
+*/

@@ -1,0 +1,16 @@
+Actúa como un Desarrollador Senior Full-Stack. Vamos a codificar la última etapa de nuestro ecosistema veterinario: "Fase 3: SaaS de Gestión y Mantenimiento de Equipos Médicos". Este es un módulo puramente corporativo (B2B) pensado para que las clínicas controlen su hardware especializado (monitores multiparámetros, ecógrafos, rayos x, etc.) y levanten tickets de servicio técnico.
+
+### 1. REQUERIMIENTOS DE INFRAESTRUCTURA (PostgreSQL)
+Debemos modelar el inventario médico y los reportes de fallas:
+- clinics: id (UUID), name, address, phone. (Nota: los usuarios VET ahora deben pertenecer a una clinic_id).
+- medical_equipment: id (UUID), clinic_id (FK), name, brand, model, serial_number, last_maintenance (DATE), next_maintenance (DATE), status (OPERATIONAL, FAILING, OUT_OF_SERVICE).
+- maintenance_tickets: id (UUID), equipment_id (FK), reported_by (FK -> users.id), description, priority (LOW, MEDIUM, HIGH), status (OPEN, IN_PROGRESS, RESOLVED), error_code_photo_url (VARCHAR para Cloudinary).
+
+### 2. ALCANCE DE LA FUNCIONALIDAD
+- Backend (NestJS): Cron-jobs automáticos que revisen diariamente la tabla de equipos y disparen alertas push a los administradores de la clínica cuando un equipo esté a 15 días de vencer su mantenimiento preventivo. CRUD completo de inventario y endpoints para abrir/cerrar tickets de soporte técnico.
+- Frontend (Flutter): Nueva pestaña exclusiva para el rol VET (o un nuevo rol 'CLINIC_ADMIN') llamada "Inventario Médico". Permite ver el estado del hardware en una lista de tarjetas con alertas visuales. Un botón rápido permite escanear el número de serie (o código de barras) del equipo dañado, tomar foto al código de error de la pantalla (usando nuestro flujo de Cloudinary) y abrir un ticket de reparación.
+
+### 3. TU TAREA
+1. Genera las nuevas entidades y relaciones para el archivo de base de datos.
+2. Escribe el código del Cron-Job / Tarea Programada en NestJS (`@nestjs/schedule`) para la verificación automática de mantenimientos preventivos.
+3. Diseña la API Rest para la creación y transición de estados de los `maintenance_tickets`.

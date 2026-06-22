@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VetCare Web Dashboard</title>
+  <!-- Google Fonts: Outfit (títulos) e Inter (cuerpo) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons para UI Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Toast Notification System -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Global Header / Navbar -->
+  <header class="main-header glass-card">
+    <div class="logo">
+      <i data-lucide="shield-check" class="icon-primary"></i>
+      <span>VetCare <span class="badge">Web</span></span>
+    </div>
+    <div class="header-right">
+      <!-- API URL Settings Panel -->
+      <div class="api-settings glass-card">
+        <label for="api-url-input">API URL:</label>
+        <input type="text" id="api-url-input" value="http://localhost:3000/api/v1" placeholder="http://localhost:3000/api/v1">
+      </div>
+      <!-- User Info & Logout -->
+      <div id="user-profile-header" class="user-profile-header hidden">
+        <span id="user-display-name">Usuario</span>
+        <span id="user-display-role" class="role-badge">Rol</span>
+        <button id="logout-btn" class="btn btn-icon-text btn-outline">
+          <i data-lucide="log-out"></i> Cerrar Sesión
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-container">
+
+    <!-- 1. AUTH SCREEN -->
+    <section id="auth-section" class="auth-section">
+      <div class="auth-card glass-card">
+        <div class="auth-toggle">
+          <button id="toggle-login" class="auth-toggle-btn active">Iniciar Sesión</button>
+          <button id="toggle-register" class="auth-toggle-btn">Registrarse</button>
+        </div>
+
+        <!-- Login Form -->
+        <form id="login-form" class="auth-form">
+          <h2>Bienvenido de vuelta</h2>
+          <p class="subtitle">Ingresa tus credenciales para acceder</p>
+          
+          <div class="form-group">
+            <label for="login-email">Correo Electrónico</label>
+            <div class="input-icon-wrapper">
+              <i data-lucide="mail"></i>
+              <input type="email" id="login-email" required placeholder="correo@ejemplo.com">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="login-password">Contraseña</label>
+            <div class="input-icon-wrapper">
+              <i data-lucide="lock"></i>
+              <input type="password" id="login-password" required placeholder="••••••••">
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">Ingresar</button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="register-form" class="auth-form hidden">
+          <h2>Crear Cuenta</h2>
+          <p class="subtitle">Regístrate para comenzar a monitorear</p>
+
+          <div class="form-group">
+            <label for="register-name">Nombre Completo</label>
+            <div class="input-icon-wrapper">
+              <i data-lucide="user"></i>
+              <input type="text" id="register-name" required placeholder="Juan Pérez">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="register-email">Correo Electrónico</label>
+            <div class="input-icon-wrapper">
+              <i data-lucide="mail"></i>
+              <input type="email" id="register-email" required placeholder="correo@ejemplo.com">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="register-phone">Teléfono (Opcional)</label>
+            <div class="input-icon-wrapper">
+              <i data-lucide="phone"></i>
+              <input type="tel" id="register-phone" placeholder="+56 9 1234 5678">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="register-password">Contraseña</label>
+            <div class="input-icon-wrapper">
+              <i data-lucide="lock"></i>
+              <input type="password" id="register-password" required placeholder="Mínimo 6 caracteres">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="register-role">Rol en el Ecosistema</label>
+            <div class="input-icon-wrapper">
+              <i data-lucide="users"></i>
+              <select id="register-role" required>
+                <option value="OWNER" selected>Dueño de Mascota (OWNER)</option>
+                <option value="VET">Médico Veterinario (VET)</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">Crear Cuenta</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- 2. VETERINARIAN DASHBOARD (VET) -->
+    <section id="vet-dashboard" class="dashboard-section hidden">
+      <div class="dashboard-grid">
+        <!-- Sidebar / Buscador y Creador -->
+        <aside class="dashboard-sidebar">
+          <!-- Card de búsqueda de mascota -->
+          <div class="glass-card panel-card">
+            <h3><i data-lucide="search"></i> Buscar Paciente</h3>
+            <p class="subtitle">Busca una mascota para crear un tratamiento</p>
+            <div class="search-box">
+              <input type="text" id="pet-search-input" placeholder="Nombre de la mascota...">
+              <button id="pet-search-btn" class="btn btn-primary"><i data-lucide="arrow-right"></i></button>
+            </div>
+            <div id="pet-search-results" class="search-results-list">
+              <!-- Resultados de la búsqueda -->
+              <p class="info-text">Ingresa un término para buscar</p>
+            </div>
+          </div>
+
+          <!-- Card de Información y Atajos -->
+          <div class="glass-card panel-card summary-card">
+            <h3>Resumen Clínico</h3>
+            <div class="stats-row">
+              <div class="stat-box">
+                <span class="stat-num" id="stat-active-treatments">0</span>
+                <span class="stat-lbl">Activos</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-num alert-red" id="stat-alert-treatments">0</span>
+                <span class="stat-lbl">Alarmas 🚨</span>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Main Panel / Semáforo de Tratamientos -->
+        <section class="dashboard-main-content">
+          <div class="content-header">
+            <h2>Semáforo de Monitoreo Post-Operatorio</h2>
+            <button id="refresh-vet-dashboard" class="btn btn-outline btn-icon-text">
+              <i data-lucide="rotate-cw"></i> Actualizar
+            </button>
+          </div>
+          
+          <div class="filter-bar">
+            <span class="filter-label">Filtrar por prioridad:</span>
+            <button class="filter-tab active" data-priority="ALL">Todos</button>
+            <button class="filter-tab" data-priority="RED"><span class="dot red"></span> Rojo</button>
+            <button class="filter-tab" data-priority="YELLOW"><span class="dot yellow"></span> Amarillo</button>
+            <button class="filter-tab" data-priority="GREEN"><span class="dot green"></span> Verde</button>
+          </div>
+
+          <div id="vet-treatments-list" class="treatments-grid">
+            <!-- Tarjetas de tratamiento con semáforo e historial diario -->
+            <div class="loading-state">
+              <div class="spinner"></div>
+              <p>Cargando información del semáforo...</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- 3. OWNER DASHBOARD (OWNER) -->
+    <section id="owner-dashboard" class="dashboard-section hidden">
+      <div class="dashboard-grid">
+        <!-- Sidebar / Agregar Mascota -->
+        <aside class="dashboard-sidebar">
+          <div class="glass-card panel-card">
+            <h3><i data-lucide="plus-circle"></i> Registrar Mascota</h3>
+            <p class="subtitle">Registra tu mascota para iniciar su historial</p>
+            <form id="add-pet-form" class="standard-form">
+              <div class="form-group">
+                <label for="pet-name">Nombre</label>
+                <input type="text" id="pet-name" required placeholder="Ej. Max">
+              </div>
+              <div class="form-group">
+                <label for="pet-species">Especie</label>
+                <select id="pet-species" required>
+                  <option value="DOG">Perro</option>
+                  <option value="CAT">Gato</option>
+                  <option value="BIRD">Ave</option>
+                  <option value="RODENT">Roedor</option>
+                  <option value="REPTILE">Reptil</option>
+                  <option value="OTHER">Otro</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="pet-breed">Raza (Opcional)</label>
+                <input type="text" id="pet-breed" placeholder="Ej. Golden Retriever">
+              </div>
+              <div class="form-group">
+                <label for="pet-weight">Peso (kg - Opcional)</label>
+                <input type="number" id="pet-weight" step="0.01" min="0" placeholder="Ej. 12.5">
+              </div>
+              <div class="form-group">
+                <label for="pet-microchip">Microchip (Opcional)</label>
+                <input type="text" id="pet-microchip" placeholder="Ej. 900215000...">
+              </div>
+              <button type="submit" class="btn btn-primary btn-block">Registrar Mascota</button>
+            </form>
+          </div>
+        </aside>
+
+        <!-- Main Panel / Mis Mascotas y Tratamientos Activos -->
+        <section class="dashboard-main-content">
+          <div class="content-header">
+            <h2>Mis Mascotas</h2>
+            <button id="refresh-owner-dashboard" class="btn btn-outline btn-icon-text">
+              <i data-lucide="rotate-cw"></i> Actualizar
+            </button>
+          </div>
+
+          <div id="owner-pets-list" class="pets-grid">
+            <!-- Tarjetas de mascotas -->
+            <div class="loading-state">
+              <div class="spinner"></div>
+              <p>Cargando tus mascotas...</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 4. MODALS -->
+
+  <!-- A. Create Treatment Modal -->
+  <div id="create-treatment-modal" class="modal-overlay hidden">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <h2>Crear Tratamiento Post-Operatorio</h2>
+        <button class="modal-close-btn" id="close-treatment-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="create-treatment-form">
+          <input type="hidden" id="treatment-pet-id">
+          
+          <div class="form-group">
+            <label>Paciente Seleccionado</label>
+            <div id="treatment-pet-info-box" class="info-highlight-box">
+              <strong>Nombre de la Mascota</strong> (Especie / Raza)
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="treatment-diagnosis">Diagnóstico / Procedimiento Quirúrgico</label>
+            <textarea id="treatment-diagnosis" required rows="3" placeholder="Ej. Orquiectomía. Monitorear heridas y comportamiento post-anestesia."></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="treatment-start-date">Fecha de Inicio</label>
+              <input type="date" id="treatment-start-date" required>
+            </div>
+            <div class="form-group">
+              <label for="treatment-end-date">Fecha de Finalización (Opcional)</label>
+              <input type="date" id="treatment-end-date">
+            </div>
+          </div>
+
+          <!-- Dynamic Treatment Rules Section -->
+          <div class="rules-section">
+            <div class="rules-header">
+              <h3>Reglas de Medicación</h3>
+              <button type="button" id="add-rule-btn" class="btn btn-sm btn-outline"><i data-lucide="plus"></i> Agregar Regla</button>
+            </div>
+            <p class="subtitle">Indica los medicamentos, dosis y frecuencia requeridos</p>
+
+            <div id="rules-container" class="rules-container">
+              <!-- Dynamically added rules go here -->
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" id="cancel-treatment-btn">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Crear Tratamiento</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- B. Daily Log Form Modal (Owner submits progress) -->
+  <div id="daily-log-modal" class="modal-overlay hidden">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <h2>Registrar Evolución Diaria</h2>
+        <button class="modal-close-btn" id="close-log-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="create-daily-log-form">
+          <input type="hidden" id="log-treatment-id">
+          
+          <div class="form-row">
+            <!-- Appetite (1-5) -->
+            <div class="form-group">
+              <label for="log-appetite">Nivel de Apetito (1 - 5)</label>
+              <select id="log-appetite" required>
+                <option value="5" selected>5 - Excelente</option>
+                <option value="4">4 - Bueno</option>
+                <option value="3">3 - Regular</option>
+                <option value="2">2 - Malo</option>
+                <option value="1">1 - Sin Apetito</option>
+              </select>
+            </div>
+            <!-- Energy (1-5) -->
+            <div class="form-group">
+              <label for="log-energy">Nivel de Energía (1 - 5)</label>
+              <select id="log-energy" required>
+                <option value="5" selected>5 - Activo / Normal</option>
+                <option value="4">4 - Moderado</option>
+                <option value="3">3 - Letárgico leve</option>
+                <option value="2">2 - Muy desganado</option>
+                <option value="1">1 - Postrado / Inmóvil</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <!-- Pain (1-10) -->
+            <div class="form-group">
+              <label for="log-pain">Nivel de Dolor (1 - 10)</label>
+              <select id="log-pain" required>
+                <option value="1" selected>1 - Sin dolor aparente</option>
+                <option value="2">2 - Dolor leve ocasional</option>
+                <option value="4">4 - Molestia persistente</option>
+                <option value="6">6 - Dolor moderado (se queja)</option>
+                <option value="8">8 - Dolor severo (llanto/sensible)</option>
+                <option value="10">10 - Dolor extremo</option>
+              </select>
+            </div>
+            <!-- Temperature -->
+            <div class="form-group">
+              <label for="log-temperature">Temperatura (°C - Rectal)</label>
+              <input type="number" id="log-temperature" step="0.1" min="30" max="45" placeholder="Ej. 38.5">
+            </div>
+          </div>
+
+          <!-- Medicine Taken -->
+          <div class="form-group checkbox-group">
+            <input type="checkbox" id="log-medicine-taken" checked>
+            <label for="log-medicine-taken">¿Se administraron los medicamentos correspondientes a esta hora?</label>
+          </div>
+
+          <!-- Alarm Signs -->
+          <div class="form-group">
+            <label for="log-alarm-signs">Signos de Alarma (Si los hay)</label>
+            <textarea id="log-alarm-signs" rows="2" placeholder="Ej. Sangrado en la herida, vómitos, encías pálidas..."></textarea>
+          </div>
+
+          <!-- General Observations -->
+          <div class="form-group">
+            <label for="log-observations">Observaciones Generales</label>
+            <textarea id="log-observations" rows="2" placeholder="Comentarios adicionales sobre el estado de la mascota..."></textarea>
+          </div>
+
+          <!-- Photo Upload & Cloudinary Integration -->
+          <div class="form-group">
+            <label for="log-image-file">Foto de la Herida / Estado (Opcional)</label>
+            <input type="file" id="log-image-file" accept="image/*">
+            <p class="info-text">Se subirá directamente a Cloudinary mediante firma segura</p>
+            <div id="image-upload-progress" class="upload-progress hidden">
+              <div class="progress-bar"></div>
+              <span>Subiendo imagen...</span>
+            </div>
+            <input type="hidden" id="log-image-url">
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" id="cancel-log-btn">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar Reporte</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- C. Daily Logs History Modal -->
+  <div id="logs-history-modal" class="modal-overlay hidden">
+    <div class="modal-card glass-card wide-modal">
+      <div class="modal-header">
+        <h2>Historial de Reportes Diarios</h2>
+        <button class="modal-close-btn" id="close-history-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="history-pet-info" class="info-highlight-box margin-bottom">
+          <!-- Mascota e info general -->
+        </div>
+        <div id="history-logs-container" class="history-logs-list">
+          <!-- Aquí se renderizan los reportes diarios con su semáforo -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main JavaScript File -->
+  <script src="app.js"></script>
+</body>
+</html>

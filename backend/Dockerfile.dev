@@ -1,0 +1,59 @@
+# ============================================
+# Dockerfile para desarrollo
+# ============================================
+FROM node:20-alpine AS development
+
+WORKDIR /usr/src/app
+
+# Instalar dependencias del sistema necesarias
+RUN apk add --no-cache openssl libc6-compat curl bash
+
+# Instalar dependencias globales útiles para desarrollo
+RUN npm install -g nodemon @nestjs/cli
+
+# Copiar archivos de configuración de dependencias
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Instalar todas las dependencias (incluyendo devDependencies)
+RUN npm ci
+
+# Generar cliente de Prisma
+RUN npx prisma generate
+
+# Copiar el código fuente
+COPY . .
+
+# Exponer puertos
+EXPOSE 3000
+EXPOSE 9229  # Debug port
+
+# Health check para desarrollo
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD curl -f http://localhost:3000/api/v1/health || exit 1
+
+# Comando por defecto para desarrollo
+CMD ["npm", "run", "start:dev"]
+
+# ============================================
+# Etapa de testing
+# ============================================
+FROM development AS testing
+
+# Ejecutar tests
+RUN npm run test
+RUN npm run test:e2e
+
+# ============================================
+# Etapa de builder (para producción)
+# ============================================
+FROM development AS builder
+
+# Compilar la aplicación TypeScript
+RUN npm run build
+
+# ============================================
+# Etapa de producción (usar desde Dockerfile principal)
+# ============================================
+FROM node:20-alpine AS production
+# Esta etapa se define en el Dockerfile principal

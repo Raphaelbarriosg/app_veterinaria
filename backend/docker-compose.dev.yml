@@ -1,0 +1,174 @@
+version: '3.8'
+
+name: veterinaria-ecosistema-dev
+
+services:
+  # ============================================
+  # Base de datos PostgreSQL para desarrollo
+  # ============================================
+  postgres:
+    image: postgres:17-alpine
+    container_name: veterinaria-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: veterinaria_db_dev
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./postgres/init-dev.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - veterinaria-dev-network
+
+  # ============================================
+  # Backend en modo desarrollo (hot-reload)
+  # ============================================
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      target: development
+    container_name: veterinaria-backend-dev
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Core
+      NODE_ENV: development
+      PORT: 3000
+      
+      # Database
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/veterinaria_db_dev"
+      
+      # Security (valores de desarrollo)
+      JWT_SECRET: "dev-jwt-secret-change-in-production"
+      JWT_EXPIRES_IN: "7d"
+      
+      # Cloudinary (opcional en desarrollo)
+      CLOUDINARY_CLOUD_NAME: "development"
+      CLOUDINARY_API_KEY: "dev-key"
+      CLOUDINARY_API_SECRET: "dev-secret"
+      
+      # CORS
+      CORS_ORIGIN: "*"
+      
+      # Logging
+      LOG_LEVEL: "debug"
+    ports:
+      - "3000:3000"
+      - "9229:9229"  # Debug port
+    volumes:
+      - ./src:/usr/src/app/src
+      - ./test:/usr/src/app/test
+      - ./prisma:/usr/src/app/prisma
+      - ./package.json:/usr/src/app/package.json
+      - ./tsconfig.json:/usr/src/app/tsconfig.json
+      - ./tsconfig.build.json:/usr/src/app/tsconfig.build.json
+      - ./nest-cli.json:/usr/src/app/nest-cli.json
+      - ./logs:/usr/src/app/logs
+      - ./uploads:/usr/src/app/uploads
+    command: npm run start:dev
+    networks:
+      - veterinaria-dev-network
+
+  # ============================================
+  # Prisma Studio - UI para base de datos
+  # ============================================
+  prisma-studio:
+    image: node:20-alpine
+    container_name: veterinaria-prisma-studio-dev
+    restart: unless-stopped
+    working_dir: /usr/src/app
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/veterinaria_db_dev"
+    volumes:
+      - ./prisma:/usr/src/app/prisma
+      - ./package.json:/usr/src/app/package.json
+      - ./node_modules:/usr/src/app/node_modules
+    ports:
+      - "5555:5555"
+    command: npx prisma studio --host 0.0.0.0 --port 5555
+    networks:
+      - veterinaria-dev-network
+
+  # ============================================
+  # pgAdmin para desarrollo
+  # ============================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: veterinaria-pgadmin-dev
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@veterinaria.dev
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_dev_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - veterinaria-dev-network
+
+  # ============================================
+  # Redis para desarrollo (cache/sesiones)
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: veterinaria-redis-dev
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass redisdev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - veterinaria-dev-network
+
+  # ============================================
+  # Mailhog para testing de emails (opcional)
+  # ============================================
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: veterinaria-mailhog-dev
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - veterinaria-dev-network
+
+# ============================================
+# Volumes para desarrollo
+# ============================================
+volumes:
+  postgres_dev_data:
+    name: veterinaria-postgres-dev-data
+  pgadmin_dev_data:
+    name: veterinaria-pgadmin-dev-data
+  redis_dev_data:
+    name: veterinaria-redis-dev-data
+
+# ============================================
+# Red para desarrollo
+# ============================================
+networks:
+  veterinaria-dev-network:
+    name: veterinaria-dev-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16

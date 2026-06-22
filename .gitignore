@@ -1,0 +1,70 @@
+# =============================================================================
+# Ecosistema Veterinario — Root .gitignore
+# =============================================================================
+
+# ── Variables de entorno (NUNCA subir) ───────────────────────────────────────
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.local
+
+# ── Backend (NestJS) ──────────────────────────────────────────────────────────
+backend/node_modules/
+backend/dist/
+backend/.env
+backend/*.log
+backend/logs/
+backend/uploads/
+backend/coverage/
+
+# ── Base de datos / Prisma ───────────────────────────────────────────────────
+backend/prisma/migrations/**/migration_lock.toml
+
+# ── Flutter / Dart ───────────────────────────────────────────────────────────
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/build/
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/android/key.properties
+mobile/ios/Pods/
+mobile/ios/Flutter/Generated.xcconfig
+mobile/ios/Flutter/flutter_export_environment.sh
+mobile/**/*.g.dart
+mobile/**/*.freezed.dart
+
+# ── Docker ───────────────────────────────────────────────────────────────────
+docker-compose.override.yml
+
+# ── Editores / IDEs ──────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# ── Sistema Operativo ────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# ── Logs y temporales ────────────────────────────────────────────────────────
+*.log
+*.tmp
+*.swp
+*.swo
+*~
+
+# ── Certificados y claves ────────────────────────────────────────────────────
+*.pem
+*.key
+*.crt
+*.p12
+backend/traefik/letsencrypt/
