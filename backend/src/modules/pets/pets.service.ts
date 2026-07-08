@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreatePetDto } from './dto/create-pet.dto';
 import { UpdatePetDto } from './dto/update-pet.dto';
@@ -8,9 +8,40 @@ import { PetSpecies } from '@prisma/client';
 export class PetsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(ownerId: string, dto: CreatePetDto) {
+  /**
+   * Resolver clinicId: si se provee usarlo, si no, usar la primera clínica del usuario
+   */
+  private async resolveClinicId(userId: string, clinicId?: string): Promise<string> {
+    if (clinicId) {
+      // Verificar que el usuario es miembro de la clínica
+      const member = await this.prisma.clinicMember.findUnique({
+        where: { clinicId_userId: { clinicId, userId } },
+      });
+      if (!member || !member.isActive) {
+        throw new ForbiddenException('No eres miembro de esta clínica');
+      }
+      return clinicId;
+    }
+
+    // Fallback: primera clínica del usuario
+    const firstMembership = await this.prisma.clinicMember.findFirst({
+      where: { userId, isActive: true },
+      orderBy: { joinedAt: 'asc' },
+    });
+
+    if (!firstMembership) {
+      throw new BadRequestException('El usuario no pertenece a ninguna clínica');
+    }
+
+    return firstMembership.clinicId;
+  }
+
+  async create(ownerId: string, dto: CreatePetDto, clinicId?: string) {
+    const resolvedClinicId = await this.resolveClinicId(ownerId, clinicId);
+
     return this.prisma.pet.create({
       data: {
+        clinicId: resolvedClinicId,
         ownerId,
         name: dto.name,
         species: dto.species as PetSpecies,

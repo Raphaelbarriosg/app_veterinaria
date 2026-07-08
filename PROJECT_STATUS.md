@@ -1,97 +1,195 @@
-# Estado del Proyecto — Ecosistema Veterinario (VetCare)
+"# Estado del Proyecto — VetCare SaaS Multi-Tenant
 
-Este documento centraliza el avance actual, la arquitectura técnica y el estado de la **Fase 1** del sistema para que cualquier otro asistente de IA o desarrollador pueda entender el contexto y retomar el trabajo de forma inmediata.
+Este documento centraliza el avance actual, la arquitectura técnica y el estado del sistema.
 
 ---
 
 ## 🏗️ Arquitectura del Sistema
 
-El ecosistema está diseñado bajo una arquitectura desacoplada donde el backend sirve tanto a clientes web como móviles:
-1.  **Backend**: API REST desarrollada en **NestJS v11** utilizando **TypeScript**, **Prisma ORM** y **PostgreSQL**.
-2.  **Base de Datos**: PostgreSQL 17 corriendo en un contenedor de Docker (`veterinaria-postgres-dev`).
-3.  **Frontend Web (Prototipo Fase 1)**: SPA (Single Page Application) responsiva construida con **HTML5, CSS3 (Vanilla)** y **Javascript (Vanilla, ES6)**, diseñada con estética premium dark mode (Slate/Mint) y Glassmorphic.
-4.  **Frontend Móvil**: Aplicación en desarrollo construida con **Flutter**.
+1. **Backend**: API REST en **NestJS v11** + **TypeScript** + **Prisma ORM 6**
+2. **Base de Datos**: **Supabase** (PostgreSQL 17+) con conexión pooler + directa
+3. **Auth**: Propio con **JWT + Refresh Token** (rotación segura, 15min access / 7d refresh)
+4. **Multi-Tenant**: Modelo `Clinic` con miembros, invitaciones, suscripciones y planes
+5. **Frontend Web (NUEVO)**: **React 19 + Next.js 16** (Turbopack) — Funcional y Completado
+6. **Frontend Web (LEGADO)**: SPA Vanilla (`/web`) — Reemplazado por Next.js
+7. **Frontend Móvil**: App **Flutter** con arquitectura BLoC
 
 ---
 
-## 📈 Estado de Avance (Hitos Completados)
+## 📦 Stack Tecnológico
 
-### 1. Base de Datos (PostgreSQL & Prisma)
-*   **Esquema Sincronizado**: El esquema de base de datos se actualizó a la última versión en `schema.prisma`. Se mapeó correctamente la extensión `uuid-ossp` en Prisma usando la definición `uuidOssp(map: "uuid-ossp")` para asegurar compatibilidad con PostgreSQL.
-*   **Push de Esquema**: Se ejecutó `npx prisma db push --accept-data-loss` de forma exitosa sobre el contenedor PostgreSQL.
-*   **Seed Completado**: Se corrigió el script `prisma/seed.ts` para que los tratamientos creados utilicen IDs con formato UUIDv4 válidos (en lugar de strings mock). El script de seeding se ejecuta exitosamente (`npx ts-node prisma/seed.ts`), creando:
-    *   **Veterinario (VET)**: `vet@test.com` con contraseña `vet123`.
-    *   **Dueño (OWNER)**: `owner@test.com` con contraseña `owner123`.
-    *   **Mascotas**: 3 registros (`Luna`, `Simba` y `Rocky`).
-    *   **Tratamientos y Reglas**: 2 tratamientos post-operatorios y 3 reglas de dosificación asociadas.
-    *   **Historial Diario (Daily Logs)**: 7 registros de evolución con datos de simulación.
+| Capa | Tecnología | Versión |
+|------|-----------|---------|
+| **Backend** | NestJS + TypeScript | 11.x |
+| **Base de Datos** | Supabase (PostgreSQL) | 17.x |
+| **ORM** | Prisma | 6.x |
+| **Auth** | JWT + Refresh Token (rotación) | Propio |
+| **Rate Limiting** | @nestjs/throttler | 3 tiers |
+| **Frontend Web** | Next.js + React + Tailwind | 16.x / 19.x |
+| **State** | Zustand | 5.x |
+| **Data Fetching** | SWR | 2.x |
+| **Forms** | React Hook Form + Zod | 7.x / 4.x |
+| **Icons** | Lucide React | — |
+| **Almacenamiento de Imágenes** | Supabase Storage | — |
+| **Mobile** | Flutter | 3.x |
 
-### 2. Backend (NestJS API)
-*   **Soporte CORS Multicliente**: Configurado en `main.ts` con un callback dinámico. Permite solicitudes seguras usando `credentials: true` e incluye soporte explícito para origen `null` (navegadores cargando archivos directos con el protocolo `file://`).
-*   **Logs de Excepciones**: Se modificó `http-exception.filter.ts` para imprimir en consola (`console.error`) las excepciones no controladas (errores 500) para facilitar la depuración.
-*   **Ampliación del DTO de Daily Logs**: Se actualizaron [CreateDailyLogDto](file:///c:/xampp/htdocs/app_veterinaria/backend/src/modules/daily-logs/dto/create-daily-log.dto.ts) y [DailyLogsService](file:///c:/xampp/htdocs/app_veterinaria/backend/src/modules/daily-logs/daily-logs.service.ts) para recibir y persistir en la base de datos los campos clínicos críticos: `painLevel` (nivel de dolor, 1-10), `temperature` (temperatura rectal en °C) y `observations` (observaciones generales).
-*   **Compilación**: El backend compila al 100% sin advertencias ni errores TypeScript.
+---
 
-### 3. Frontend Web (`/web`)
-*   **Autenticación**: Inicio de sesión y registro funcionales con persistencia del token JWT y el rol del usuario en `localStorage`.
-*   **Dashboard VET**:
-    *   Buscador dinámico de pacientes (mascotas).
-    *   Formulario modal de prescripción con reglas de medicación dinámicas (medicamento, dosis, frecuencia, requisito de foto).
-    *   Semáforo de tratamientos activos en tiempo real (Rojo si no hay reportes de las últimas 24h o hay signos de alarma; Amarillo si no se cumplió la medicación o hay energía/apetito bajo; Verde si todo está estable).
-    *   Visualizador de evolución del tratamiento detallado (con historial de métricas, dolor, temperatura e imágenes).
-*   **Dashboard OWNER**:
-    *   Formulario de registro de nuevas mascotas.
-    *   Tarjeta informativa de tratamientos activos.
-    *   Formulario modal de reporte diario (Daily Log) con sliders de apetito, energía, dolor, temperatura, alarma y foto.
-*   **Carga Inteligente de Imágenes (Cloudinary Fallback)**:
-    *   Flujo real implementado (obtiene firma del backend e interactúa con la API de Cloudinary).
-    *   **Simulación Inteligente (Fallback)**: Si no se configuran credenciales reales en `.env` (se dejan los placeholders demo) o si la cuenta está inactiva (`cloud_name is disabled`), el frontend intercepta el error, muestra una advertencia y simula exitosamente la subida cargando una foto demo de veterinaria. Esto mantiene el prototipo 100% funcional.
-*   **Ajustes de UI/CSS**: Corregido un typo en la propiedad de borde de la clase `.glass-card` en [styles.css](file:///c:/xampp/htdocs/app_veterinaria/web/styles.css).
+## 📈 Estado de Avance — Backend (COMPLETO ✅)
+
+### Base de Datos (Supabase + Prisma)
+* Esquema Multi-Tenant: `Clinic`, `ClinicMember`, `ClinicInvitation`, `Subscription`
+* Auth propio: `User` con `passwordHash`, `role` + `RefreshToken` con rotación segura
+* Conexión dual: `DATABASE_URL` (pooler) + `DIRECT_URL` (directa)
+* Schema sincronizado con Supabase via `prisma db push`
+
+### Seed de Datos
+* 3 usuarios: VET, OWNER, CLINIC_ADMIN
+* 1 clínica: VetCare Central con miembros y suscripción PROFESSIONAL
+* 3 mascotas, 2 tratamientos, 3 reglas de medicación, 7 daily logs
+
+### Endpoints Auth
+```
+POST /api/v1/auth/register  → Registro (accessToken + refreshToken)
+POST /api/v1/auth/login     → Login (accessToken + refreshToken)
+POST /api/v1/auth/refresh   → Renovar tokens (rotación segura)
+POST /api/v1/auth/logout    → Revoca refresh tokens
+GET  /api/v1/auth/me        → Verificar sesión / obtener perfil (getProfile implementado)
+```
+
+### Seguridad
+- JWT Access Token: 15 minutos
+- Refresh Token: 7 días, rotación (un solo uso)
+- Detección de reuso malicioso → revocar TODOS los tokens del usuario
+- Rate Limiting: 3 tiers global + por endpoint
+- Audit Service: Logging asíncrono
+- Helmet + CORS dinámico + ValidationPipe
+
+---
+
+## 📈 Estado de Avance — Frontend Next.js (COMPLETO ✅)
+
+### Estructura del Proyecto (`/web-next`)
+
+El frontend de Next.js se ha estructurado con un patrón BFF (Backend For Frontend), donde las peticiones externas al API REST pasan mediante rutas de servidor, asegurando que los tokens de seguridad queden protegidos en cookies `httpOnly`. 
+
+Se han completado los siguientes módulos:
+
+1. **Autenticación (Auth UI)**
+   - Vistas de Login y Registro validadas con Zod.
+   - Estado centralizado con Zustand (`auth-store.ts`).
+   - Middleware redirigiendo de acuerdo a la existencia de tokens.
+2. **Dashboard Veterinario**
+   - Panel principal mostrando el **Semáforo de Tratamientos**.
+   - Buscador de pacientes y vista de detalle por mascota con su historial de tratamientos.
+3. **Dashboard Dueño (Owner)**
+   - Vista de listado de mascotas propias.
+   - Vista de tratamientos y un formulario interactivo para **Daily Logs** (registros diarios de medicinas, temperatura, apetito, dolor, y energía).
+   - **Subida de fotos** en cada Daily Log: el dueño puede adjuntar una foto de la herida o evolución de la mascota directamente desde el formulario, con preview local instantáneo.
+   - **Historial con fotos**: cada log guardado muestra la imagen subida con un lightbox para verla en tamaño completo.
+4. **Dashboard de Clínicas**
+   - Vistas generales y detalladas para que los administradores controlen el estado de sus miembros, invitaciones y la cuota máxima del plan.
+5. **UI & Theme**
+   - Se ha consolidado en `globals.css` el tema oscuro *Slate/Mint* mediante CSS nativo y Tailwind, logrando interfaces de tipo *Glassmorphism*.
+   - Skeletons automáticos y diseño totalmente *Responsive*.
+
+### Arquitectura de Seguridad (BFF + httpOnly Cookies)
+
+```
+Browser (JavaScript)                    Next.js BFF                         NestJS Backend
+     │                                     │                                    │
+     │  POST /api/auth/login               │                                    │
+     │  { email, password }                │                                    │
+     │ ──────────────────────────────────> │                                    │
+     │                                     │  POST /api/v1/auth/login           │
+     │                                     │ ──────────────────────────────────> │
+     │                                     │  { accessToken, refreshToken }     │
+     │                                     │ <────────────────────────────────── │
+     │  Set-Cookie: access_token (httpOnly)│                                    │
+     │  Set-Cookie: refresh_token (httpOnly)│                                   │
+     │  { user }                           │                                    │
+     │ <────────────────────────────────── │                                    │
+```
+
+### Correcciones Recientes
+- **Estado de Sesión**: Se solucionó el bug de carga infinita ("Cargando...") en las rutas protegidas (`/dashboard`, `/vet`, `/owner`) importando el hook `useAuth()` en el layout principal para forzar la validación inicial contra el servidor y actualizar el estado global.
+- **Bucle de Redirecciones (BFF Proxy)**: Se corrigió una falla en el proxy de Next.js (`api/v1/[...path]/route.ts`) que causaba un bucle infinito entre `/dashboard` y `/login`. Ahora, si el `access_token` falta pero existe el `refresh_token`, intenta refrescarlo correctamente, y si falla, limpia explícitamente ambas cookies (`maxAge: 0`) para notificar al middleware.
+- **Fotos en Daily Logs (Supabase Storage)**: Se implementó la subida de fotos de evolución post-operatoria en los Daily Logs del dueño. Cloudinary fue reemplazado por **Supabase Storage** (ya en uso como BD) dado que Cloudinary no está disponible geográficamente. La imagen se sube desde el BFF de Next.js al backend NestJS vía `POST /api/v1/upload/image`, que la deposita en el bucket de Supabase usando la Service Role Key (nunca expuesta al cliente). Las fotos se muestran en el historial con un visor lightbox.
+- **Configuración de Puertos y Proxy**: Se actualizó el archivo `middleware.ts` a `proxy.ts` para cumplir con el estándar de Next.js 16. Además, se forzó el puerto `3001` en `package.json` para el frontend, evitando colisiones con el backend en el `3000`. También se configuró `NEXT_PUBLIC_API_URL` a `http://127.0.0.1:3000` para resolver fallos de conexión por resolución de IPv6 (`::1`) en Windows.
+- **Ruta de Clínicas**: Se arregló un bug donde el panel de Mis Clínicas (`/clinics`) enviaba peticiones al endpoint incorrecto, causando que el backend interpretara `my` como un UUID malformado. La ruta fue corregida y el mapeo de `ClinicMember` a `Clinic` fue ajustado en el frontend para asegurar la navegación al detalle.
+
 
 ---
 
 ## 🚀 Guía de Ejecución Rápida
 
-### 1. Requisitos Previos
-*   Docker y Docker Compose instalados.
-*   Node.js instalado en el sistema.
-
-### 2. Levantar Base de Datos y Backend
-Desde la carpeta raíz del proyecto:
-
+### Backend
 ```bash
-# 1. Iniciar contenedor de PostgreSQL en segundo plano
 cd backend
-docker compose -f docker-compose.dev.yml up postgres -d
-
-# 2. Resetear, aplicar esquema y cargar semilla (opcional si es primera vez)
+# Configurar .env con credenciales Supabase
 npx prisma db push --accept-data-loss
 npx ts-node prisma/seed.ts
-
-# 3. Iniciar servidor de desarrollo NestJS
 npm run start:dev
+# API: http://localhost:3000/api/v1
 ```
 
-*El backend correrá en: `http://localhost:3000/api/v1`*
+### Frontend Next.js
+```bash
+cd web-next
+# Crear .env.local con:
+# NEXT_PUBLIC_API_URL=http://127.0.0.1:3000
+npm run dev
+# App web en: http://localhost:3001
+```
 
-### 3. Ejecutar Frontend Web
-Puedes abrir el archivo [index.html](file:///c:/xampp/htdocs/app_veterinaria/web/index.html) directamente en tu navegador (protocolo `file://`), o servirlo mediante Apache (XAMPP) en la ruta correspondiente:
-`http://localhost/app_veterinaria/web/index.html`
-
-#### Credenciales de Prueba:
-*   **Rol VET (Veterinario)**:
-    *   Email: `vet@test.com`
-    *   Contraseña: `vet123`
-*   **Rol OWNER (Dueño)**:
-    *   Email: `owner@test.com`
-    *   Contraseña: `owner123`
+### Credenciales de Prueba
+| Rol | Email | Password |
+|-----|-------|----------|
+| Veterinario | `vet@test.com` | `vet123` |
+| Dueño | `owner@test.com` | `owner123` |
+| Admin Clínica | `admin@test.com` | `admin123` |
 
 ---
 
-## 🔮 Próximos Pasos (Fase 2)
+## 🔮 Plan a Seguir — Próximos Pasos (FUTURO)
 
-*   **Integración Móvil (Flutter)**:
-    *   Asegurar que los modelos y peticiones de red en la aplicación Flutter (`mobile/`) consuman los mismos endpoints que ya están validados en el frontend web.
-    *   Revisar si la aplicación móvil requiere soporte para el envío de `painLevel` y `temperature` en sus respectivas pantallas de reporte.
-*   **Despliegue y Cloudinary**:
-    *   Sustituir las credenciales demo en `backend/.env` por claves reales de Cloudinary en entorno de producción.
+Con el Frontend Web MVP (Minimum Viable Product) al 100% terminado y la compilación exitosa sin errores (`npm run build`), el proyecto se encuentra en una etapa madura.
+
+### Desarrollo y Operaciones (DevOps & QA)
+- [ ] Tests unitarios + e2e (backend + frontend, con Jest, Cypress o Playwright).
+- [ ] CI/CD Pipelines con GitHub Actions (Linting, Testing y Auto-Build).
+- [ ] Conexión y migración segura de datos en el entorno de Producción real en Supabase.
+- [ ] Configuración del script *cron job* para limpieza periódica de RefreshTokens expirados o revocados en la base de datos.
+
+### Expansión Funcional
+- [ ] Actualizar App de Flutter para consumir el nuevo Auth Flow con Refresh Tokens.
+- [ ] Módulo de Emergencias (Notificaciones en tiempo real con WebSockets o FCM).
+- [ ] SaaS B2B Gestión de Equipos: Pasarela de pagos, upgrades de licencias de clínicas.
+- [ ] Implementación de Email Service (Nodemailer o Resend) para el envío real de las invitaciones por correo electrónico a la clínica.
+- [x] Subida de imágenes en Daily Logs — implementado con **Supabase Storage** (Cloudinary descartado por restricción geográfica).
+
+---
+
+## 💻 Tutorial: Cómo levantar el entorno local (Backend + Frontend)
+
+Para ejecutar este ecosistema en tu máquina, necesitarás abrir **dos ventanas de terminal separadas**, ya que cada proyecto tiene su propio servidor en desarrollo.
+
+### 1. Iniciar el Backend (NestJS)
+Abre la primera terminal y dirígete a la carpeta del backend. Asegúrate de tener configuradas tus variables de entorno, y luego inicia el modo desarrollo:
+
+```bash
+cd backend
+npm run start:dev
+```
+*Esto levantará el servidor backend, típicamente en el puerto 3000.*
+
+### 2. Iniciar el Frontend (Next.js)
+Abre una segunda terminal, dirígete a la carpeta del frontend y levanta su servidor de desarrollo:
+
+```bash
+cd web-next
+npm run dev
+```
+*El frontend está configurado para correr por defecto en el puerto `3001` (`http://localhost:3001`) para evitar colisiones de red con el backend.*
+
+"

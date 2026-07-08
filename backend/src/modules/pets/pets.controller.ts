@@ -9,11 +9,15 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from '../../common/enums/role.enum';
+import { AuditService, AuditAction } from '../../common/services/audit.service';
 
 @Controller('pets')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class PetsController {
-  constructor(private readonly petsService: PetsService) {}
+  constructor(
+    private readonly petsService: PetsService,
+    private readonly auditService: AuditService,
+  ) {}
 
   @Post()
   @Roles(Role.OWNER)
@@ -21,7 +25,15 @@ export class PetsController {
     @Request() req: { user: { userId: string } },
     @Body() dto: CreatePetDto,
   ) {
-    return this.petsService.create(req.user.userId, dto);
+    const result = await this.petsService.create(req.user.userId, dto);
+    this.auditService.logAsync({
+      action: AuditAction.PET_CREATED,
+      userId: req.user.userId,
+      resourceType: 'pet',
+      resourceId: result.id,
+      details: { name: dto.name, species: dto.species },
+    });
+    return result;
   }
 
   @Get()

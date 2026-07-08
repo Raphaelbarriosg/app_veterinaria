@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateTreatmentDto } from './dto/create-treatment.dto';
 import { UpdateTreatmentDto } from './dto/update-treatment.dto';
@@ -7,9 +7,27 @@ import { UpdateTreatmentDto } from './dto/update-treatment.dto';
 export class TreatmentsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Resolver clinicId a partir del petId (la mascota ya tiene clinicId)
+   */
+  private async getClinicIdFromPet(petId: string): Promise<string> {
+    const pet = await this.prisma.pet.findUnique({
+      where: { id: petId },
+      select: { clinicId: true },
+    });
+    if (!pet) {
+      throw new NotFoundException('Mascota no encontrada');
+    }
+    return pet.clinicId;
+  }
+
   async create(vetId: string, dto: CreateTreatmentDto) {
+    // Obtener clinicId de la mascota
+    const clinicId = await this.getClinicIdFromPet(dto.petId);
+
     return this.prisma.treatment.create({
       data: {
+        clinicId,
         vetId,
         petId: dto.petId,
         diagnosis: dto.diagnosis,
@@ -107,9 +125,6 @@ export class TreatmentsService {
 
   /**
    * Dashboard Semáforo — Calcula el estado de cumplimiento de tratamientos activos.
-   * ROJO: Sin logs en las últimas 24h o signos de alarma reportados
-   * AMARILLO: Logs parciales (no todas las dosis) o niveles bajos
-   * VERDE: Cumplimiento completo en las últimas 24h
    */
   async getDashboard(vetId: string) {
     const treatments = await this.prisma.treatment.findMany({

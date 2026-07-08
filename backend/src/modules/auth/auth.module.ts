@@ -10,7 +10,9 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'fallback-secret',
-      signOptions: { expiresIn: (process.env.JWT_EXPIRATION || '24h') as any },
+      // Access token: 15min (controlado en AuthService.generateTokenPair)
+      // Este valor es fallback si no se especifica en sign()
+      signOptions: { expiresIn: '15m' },
     }),
   ],
   controllers: [AuthController],

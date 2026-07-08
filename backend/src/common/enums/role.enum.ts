@@ -1,4 +1,6 @@
 export enum Role {
+  SUPER_ADMIN = 'SUPER_ADMIN',
+  CLINIC_ADMIN = 'CLINIC_ADMIN',
   VET = 'VET',
   OWNER = 'OWNER',
 }

@@ -1,18 +1,18 @@
 // ============================================
-// Prisma Schema — Ecosistema Veterinario
-// Versión: 6.2.1
-// Base de datos: PostgreSQL 17+
+// Prisma Schema — VetCare SaaS Multi-Tenant
+// Supabase + PostgreSQL (Auth propio con JWT)
 // ============================================
 
 generator client {
   provider = "prisma-client-js"
-  previewFeatures = ["postgresqlExtensions"]  // Para extensiones de PostgreSQL
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  extensions = [pgcrypto, uuidOssp(map: "uuid-ossp")]  // Extensiones PostgreSQL
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")      // Pooled connection (Supabase Pooler - port 6543)
+  directUrl  = env("DIRECT_URL")          // Direct connection (Supabase Direct - port 5432)
+  extensions = [pgcrypto, uuidOssp(map: "uuid-ossp")]
 }
 
 // ============================================
@@ -20,9 +20,10 @@ datasource db {
 // ============================================
 
 enum Role {
+  SUPER_ADMIN
+  CLINIC_ADMIN
   VET
   OWNER
-  ADMIN  // Futura funcionalidad
 }
 
 enum TreatmentStatus {
@@ -41,122 +42,264 @@ enum PetSpecies {
   OTHER
 }
 
+enum PlanType {
+  FREE
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+enum ClinicStatus {
+  ACTIVE
+  SUSPENDED
+  TRIAL
+}
+
 // ============================================
-// MODELS
+// TENANT: Clinica Veterinaria
+// ============================================
+
+model Clinic {
+  id        String       @id @default(uuid()) @db.Uuid
+  name      String       @db.VarChar(200)
+  slug      String       @unique @db.VarChar(100)
+  logoUrl   String?     @map("logo_url")
+  address   String?     @db.Text
+  phone     String?     @db.VarChar(20)
+  email     String      @db.VarChar(255)
+  country   String?     @db.VarChar(3)
+  currency  String      @default("CLP") @db.VarChar(3)
+  timezone  String      @default("America/Santiago") @db.VarChar(50)
+  status    ClinicStatus @default(TRIAL)
+  settings  Json?
+  maxVets   Int         @default(1) @db.SmallInt
+  maxPets   Int         @default(50) @db.SmallInt
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+
+  members      ClinicMember[]
+  pets         Pet[]
+  treatments   Treatment[]
+  subscription Subscription?
+  invitations  ClinicInvitation[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("clinics")
+}
+
+// ============================================
+// MEMBRESIA: Usuario <-> Clinica
+// ============================================
+
+model ClinicMember {
+  id       String   @id @default(uuid()) @db.Uuid
+  clinicId String   @map("clinic_id") @db.Uuid
+  userId   String   @map("user_id") @db.Uuid
+  role     Role
+  invitedBy String? @map("invited_by") @db.Uuid
+  joinedAt DateTime @default(now()) @map("joined_at")
+  isActive Boolean  @default(true) @map("is_active")
+
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([clinicId, userId])
+  @@index([clinicId])
+  @@index([userId])
+  @@index([role])
+  @@map("clinic_members")
+}
+
+// ============================================
+// INVITACIONES a la Clinica
+// ============================================
+
+model ClinicInvitation {
+  id         String   @id @default(uuid()) @db.Uuid
+  clinicId   String   @map("clinic_id") @db.Uuid
+  email      String   @db.VarChar(255)
+  role       Role
+  token      String   @unique @db.VarChar(255)
+  invitedBy  String   @map("invited_by") @db.Uuid
+  expiresAt  DateTime @map("expires_at")
+  acceptedAt DateTime? @map("accepted_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@index([clinicId])
+  @@index([email])
+  @@index([token])
+  @@map("clinic_invitations")
+}
+
+// ============================================
+// SUSCRIPCION: Plan de la Clinica
+// ============================================
+
+model Subscription {
+  id                String             @id @default(uuid()) @db.Uuid
+  clinicId          String             @unique @map("clinic_id") @db.Uuid
+  planType          PlanType           @map("plan_type")
+  status            SubscriptionStatus @default(TRIAL)
+  currentPeriodStart DateTime          @map("current_period_start")
+  currentPeriodEnd   DateTime          @map("current_period_end")
+  trialEndsAt       DateTime?          @map("trial_ends_at")
+  cancelledAt       DateTime?          @map("cancelled_at")
+  provider          String?            @db.VarChar(50)
+  providerId        String?            @unique @map("provider_id") @db.VarChar(255)
+  providerPriceId   String?            @map("provider_price_id") @db.VarChar(255)
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([planType])
+  @@index([currentPeriodEnd])
+  @@map("subscriptions")
+}
+
+// ============================================
+// USUARIO (Auth propio con JWT + Refresh Token)
+// El campo `role` es el rol global del usuario.
+// Los roles por clinica se manejan en ClinicMember.role
 // ============================================
 
 model User {
-  id            String   @id @default(uuid()) @db.Uuid
-  email         String   @unique
-  passwordHash  String   @map("password_hash")
-  name          String
-  phone         String?  @db.VarChar(20)
-  role          Role
-  avatarUrl     String?  @map("avatar_url")
-  isActive      Boolean  @default(true) @map("is_active")
+  id            String    @id @default(uuid()) @db.Uuid
+  email         String    @unique @db.VarChar(255)
+  passwordHash  String    @map("password_hash")
+  name          String    @db.VarChar(200)
+  phone         String?   @db.VarChar(20)
+  role          Role      @default(OWNER)
+  avatarUrl     String?   @map("avatar_url")
+  isActive      Boolean   @default(true) @map("is_active")
   lastLogin     DateTime? @map("last_login")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
-  // Relations
-  pets          Pet[]         @relation("OwnerPets")
-  treatments    Treatment[]   @relation("VetTreatments")
+  memberships   ClinicMember[]
+  ownedPets     Pet[]        @relation("OwnerPets")
+  vetTreatments Treatment[]  @relation("VetTreatments")
+  refreshTokens RefreshToken[]
 
-  // Indexes
   @@index([email])
   @@index([role])
   @@index([createdAt])
   @@map("users")
 }
 
-model Pet {
-  id         String     @id @default(uuid()) @db.Uuid
-  ownerId    String     @map("owner_id") @db.Uuid
-  name       String     @db.VarChar(100)
-  species    PetSpecies
-  breed      String?    @db.VarChar(100)
-  weight     Decimal?   @db.Decimal(5, 2)  // kg con 2 decimales
-  birthDate  DateTime?  @map("birth_date")
-  color      String?    @db.VarChar(50)
-  microchip  String?    @unique @db.VarChar(50)
-  notes      String?    @db.Text
-  isActive   Boolean    @default(true) @map("is_active")
-  createdAt  DateTime   @default(now()) @map("created_at")
-  updatedAt  DateTime   @updatedAt @map("updated_at")
+// ============================================
+// MASCOTA (perteneciente a un Tenant)
+// ============================================
 
-  // Relations
-  owner      User        @relation("OwnerPets", fields: [ownerId], references: [id], onDelete: Cascade)
+model Pet {
+  id        String     @id @default(uuid()) @db.Uuid
+  clinicId  String     @map("clinic_id") @db.Uuid
+  ownerId   String     @map("owner_id") @db.Uuid
+  name      String     @db.VarChar(100)
+  species   PetSpecies
+  breed     String?    @db.VarChar(100)
+  weight    Decimal?   @db.Decimal(5, 2)
+  birthDate DateTime?  @map("birth_date")
+  color     String?    @db.VarChar(50)
+  microchip String?    @db.VarChar(50)
+  notes     String?    @db.Text
+  isActive  Boolean    @default(true) @map("is_active")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  clinic     Clinic     @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  owner      User       @relation("OwnerPets", fields: [ownerId], references: [id], onDelete: Cascade)
   treatments Treatment[]
 
-  // Indexes
+  @@index([clinicId])
   @@index([ownerId])
   @@index([species])
   @@index([name])
-  @@unique([name, ownerId], name: "pet_name_owner_unique")
+  @@unique([name, ownerId, clinicId], name: "pet_name_owner_clinic_unique")
   @@map("pets")
 }
 
+// ============================================
+// TRATAMIENTO
+// ============================================
+
 model Treatment {
-  id         String          @id @default(uuid()) @db.Uuid
-  vetId      String          @map("vet_id") @db.Uuid
-  petId      String          @map("pet_id") @db.Uuid
-  diagnosis  String          @db.Text
-  notes      String?         @db.Text
-  startDate  DateTime        @map("start_date")
-  endDate    DateTime?       @map("end_date")
-  status     TreatmentStatus @default(ACTIVE)
-  priority   Int             @default(1) @db.SmallInt  // 1-5, 5 es más urgente
-  createdAt  DateTime        @default(now()) @map("created_at")
-  updatedAt  DateTime        @updatedAt @map("updated_at")
+  id        String          @id @default(uuid()) @db.Uuid
+  clinicId  String          @map("clinic_id") @db.Uuid
+  vetId     String          @map("vet_id") @db.Uuid
+  petId     String          @map("pet_id") @db.Uuid
+  diagnosis String          @db.Text
+  notes     String?         @db.Text
+  startDate DateTime        @map("start_date")
+  endDate   DateTime?       @map("end_date")
+  status    TreatmentStatus @default(ACTIVE)
+  priority  Int             @default(1) @db.SmallInt
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
 
-  // Relations
-  vet        User              @relation("VetTreatments", fields: [vetId], references: [id], onDelete: Cascade)
-  pet        Pet               @relation(fields: [petId], references: [id], onDelete: Cascade)
-  rules      TreatmentRule[]
-  dailyLogs  DailyLog[]
+  clinic    Clinic          @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  vet       User            @relation("VetTreatments", fields: [vetId], references: [id], onDelete: Cascade)
+  pet       Pet             @relation(fields: [petId], references: [id], onDelete: Cascade)
+  rules     TreatmentRule[]
+  dailyLogs DailyLog[]
 
-  // Indexes
+  @@index([clinicId])
   @@index([petId])
   @@index([vetId])
   @@index([status])
-  @@index([priority])
   @@index([startDate])
-  @@index([createdAt])
   @@map("treatments")
 }
+
+// ============================================
+// REGLAS DE TRATAMIENTO
+// ============================================
 
 model TreatmentRule {
   id             String    @id @default(uuid()) @db.Uuid
   treatmentId    String    @map("treatment_id") @db.Uuid
-  medicineName   String    @map("medicine_name") @db.VarChar(200)
-  dosage         String    @db.VarChar(100)
-  frequencyHours Int       @map("frequency_hours")
-  requirePhoto   Boolean   @default(false) @map("require_photo")
-  notes          String?   @db.Text
-  startTime      DateTime? @map("start_time")  // Hora específica para primera dosis
-  isActive       Boolean   @default(true) @map("is_active")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
+  medicineName   String   @map("medicine_name") @db.VarChar(200)
+  dosage         String   @db.VarChar(100)
+  frequencyHours Int      @map("frequency_hours")
+  requirePhoto   Boolean  @default(false) @map("require_photo")
+  notes          String?  @db.Text
+  startTime      DateTime? @map("start_time")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
-  // Relations
-  treatment      Treatment @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
+  treatment Treatment @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
 
-  // Indexes
   @@index([treatmentId])
   @@index([isActive])
-  @@index([requirePhoto])
   @@map("treatment_rules")
 }
+
+// ============================================
+// LOGS DIARIOS
+// ============================================
 
 model DailyLog {
   id             String    @id @default(uuid()) @db.Uuid
   treatmentId    String    @map("treatment_id") @db.Uuid
   registeredAt   DateTime  @default(now()) @map("registered_at")
   medicineTaken  Boolean   @default(false) @map("medicine_taken")
-  appetiteLevel  Int       @map("appetite_level") @db.SmallInt  // 1-5
-  energyLevel    Int       @map("energy_level") @db.SmallInt    // 1-5
-  painLevel      Int?      @map("pain_level") @db.SmallInt      // 1-10
-  temperature    Decimal?  @db.Decimal(4, 1)                    // °C con 1 decimal
+  appetiteLevel  Int       @map("appetite_level") @db.SmallInt
+  energyLevel    Int       @map("energy_level") @db.SmallInt
+  painLevel      Int?      @map("pain_level") @db.SmallInt
+  temperature    Decimal?  @db.Decimal(4, 1)
   alarmSigns     String?   @map("alarm_signs") @db.Text
   observations   String?   @db.Text
   imageUrl       String?   @map("image_url")
@@ -164,10 +307,8 @@ model DailyLog {
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
-  // Relations
-  treatment      Treatment @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
+  treatment Treatment @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
 
-  // Indexes
   @@index([treatmentId, registeredAt])
   @@index([registeredAt])
   @@index([medicineTaken])
@@ -175,63 +316,23 @@ model DailyLog {
 }
 
 // ============================================
-// FUTURE MODELS (COMENTADOS PARA MVP)
+// REFRESH TOKEN (Rotación segura de sesiones)
 // ============================================
 
-/*
-model Appointment {
-  id        String   @id @default(uuid())
-  petId     String
-  vetId     String
-  date      DateTime
-  type      String   // Consulta, Vacuna, Cirugía, etc.
-  status    String   // Programada, Confirmada, Completada, Cancelada
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  pet       Pet      @relation(fields: [petId], references: [id])
-  vet       User     @relation(fields: [vetId], references: [id])
-  
-  @@index([petId])
-  @@index([vetId])
-  @@index([date])
-}
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  token     String   @unique @db.VarChar(255)
+  expiresAt DateTime @map("expires_at")
+  isRevoked Boolean  @default(false) @map("is_revoked")
+  createdAt DateTime @default(now()) @map("created_at")
 
-model Vaccine {
-  id          String   @id @default(uuid())
-  petId       String
-  name        String
-  date        DateTime
-  nextDate    DateTime?
-  brand       String?
-  batchNumber String?
-  vetId       String?
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  pet         Pet      @relation(fields: [petId], references: [id])
-  vet         User?    @relation(fields: [vetId], references: [id])
-  
-  @@index([petId])
-  @@index([date])
-}
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-model Notification {
-  id        String   @id @default(uuid())
-  userId    String
-  type      String   // Recordatorio, Alerta, Sistema
-  title     String
-  message   String
-  data      Json?    // Datos adicionales
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
-  
-  user      User     @relation(fields: [userId], references: [id])
-  
+  // Indexes
   @@index([userId])
-  @@index([read])
-  @@index([createdAt])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
 }
-*/

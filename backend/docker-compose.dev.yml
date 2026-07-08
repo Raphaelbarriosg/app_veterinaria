@@ -169,6 +169,3 @@ networks:
   veterinaria-dev-network:
     name: veterinaria-dev-network
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.21.0.0/16

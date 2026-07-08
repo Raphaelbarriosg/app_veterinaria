@@ -9,11 +9,15 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from '../../common/enums/role.enum';
+import { AuditService, AuditAction } from '../../common/services/audit.service';
 
 @Controller('treatments')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class TreatmentsController {
-  constructor(private readonly treatmentsService: TreatmentsService) {}
+  constructor(
+    private readonly treatmentsService: TreatmentsService,
+    private readonly auditService: AuditService,
+  ) {}
 
   @Post()
   @Roles(Role.VET)
@@ -21,7 +25,15 @@ export class TreatmentsController {
     @Request() req: { user: { userId: string } },
     @Body() dto: CreateTreatmentDto,
   ) {
-    return this.treatmentsService.create(req.user.userId, dto);
+    const result = await this.treatmentsService.create(req.user.userId, dto);
+    this.auditService.logAsync({
+      action: AuditAction.TREATMENT_CREATED,
+      userId: req.user.userId,
+      resourceType: 'treatment',
+      resourceId: result.id,
+      details: { petId: dto.petId, diagnosis: dto.diagnosis },
+    });
+    return result;
   }
 
   @Get('dashboard')
@@ -59,6 +71,17 @@ export class TreatmentsController {
     @Request() req: { user: { userId: string } },
     @Body() dto: UpdateTreatmentDto,
   ) {
-    return this.treatmentsService.update(id, req.user.userId, dto);
+    const result = await this.treatmentsService.update(id, req.user.userId, dto);
+    const action = dto.status === 'COMPLETED'
+      ? AuditAction.TREATMENT_COMPLETED
+      : AuditAction.TREATMENT_UPDATED;
+    this.auditService.logAsync({
+      action,
+      userId: req.user.userId,
+      resourceType: 'treatment',
+      resourceId: id,
+      details: { status: dto.status },
+    });
+    return result;
   }
 }
