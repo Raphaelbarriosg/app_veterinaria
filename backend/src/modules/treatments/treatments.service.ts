@@ -31,6 +31,7 @@ export class TreatmentsService {
         vetId,
         petId: dto.petId,
         diagnosis: dto.diagnosis,
+        procedureType: dto.procedureType ?? 'OTHER',
         startDate: new Date(dto.startDate),
         endDate: dto.endDate ? new Date(dto.endDate) : undefined,
         rules: dto.rules
@@ -64,7 +65,7 @@ export class TreatmentsService {
     });
   }
 
-  async findAllByPet(petId: string, userId: string, userRole: string) {
+  async findAllByPet(petId: string, userId: string, userRole: string, status?: string) {
     // Verificar que el dueño tenga acceso a esta mascota
     if (userRole === 'OWNER') {
       const pet = await this.prisma.pet.findUnique({ where: { id: petId } });
@@ -73,15 +74,66 @@ export class TreatmentsService {
       }
     }
 
+    const where: any = { petId };
+    if (status && status !== 'ALL') {
+      where.status = status;
+    }
+
     return this.prisma.treatment.findMany({
-      where: { petId },
+      where,
       include: {
-        vet: { select: { id: true, name: true, email: true } },
+        vet: { select: { id: true, name: true, email: true, phone: true } },
         rules: true,
-        dailyLogs: { orderBy: { registeredAt: 'desc' }, take: 5 },
+        dailyLogs: { orderBy: { registeredAt: 'desc' } },
       },
       orderBy: { startDate: 'desc' },
     });
+  }
+
+  async getHistory(vetId: string, query?: { q?: string; status?: string; page?: number; limit?: number }) {
+    const page = Number(query?.page) || 1;
+    const limit = Number(query?.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const where: any = {
+      vetId,
+    };
+
+    if (query?.status && query.status !== 'ALL') {
+      where.status = query.status;
+    }
+
+    if (query?.q && query.q.trim() !== '') {
+      where.OR = [
+        { diagnosis: { contains: query.q, mode: 'insensitive' } },
+        { pet: { name: { contains: query.q, mode: 'insensitive' } } },
+      ];
+    }
+
+    const [items, total] = await Promise.all([
+      this.prisma.treatment.findMany({
+        where,
+        include: {
+          pet: { include: { owner: { select: { id: true, name: true, phone: true } } } },
+          rules: true,
+          dailyLogs: { orderBy: { registeredAt: 'desc' }, take: 5 },
+        },
+        orderBy: { startDate: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.treatment.count({ where }),
+    ]);
+
+    return {
+      data: items,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(id: string) {
@@ -138,43 +190,78 @@ export class TreatmentsService {
           },
           orderBy: { registeredAt: 'desc' },
         },
+        medicationLogs: {
+          where: {
+            scheduledAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+          },
+          orderBy: { scheduledAt: 'desc' },
+        },
       },
     });
 
+    // Importación de los umbrales de temperatura por especie
+    const { TEMP_THRESHOLDS } = require('../medication-logs/medication-logs.service');
+
     return treatments.map((treatment) => {
       const logs24h = treatment.dailyLogs;
+      const medLogs24h = treatment.medicationLogs;
+
+      // RED rules
       const hasAlarmSigns = logs24h.some((log) => log.alarmSigns && log.alarmSigns.trim() !== '');
+
+      const thresholds = TEMP_THRESHOLDS[treatment.pet.species] || TEMP_THRESHOLDS.OTHER;
+      const hasFever = logs24h.some(
+        (log) => log.temperature && Number(log.temperature) >= thresholds.fever,
+      );
+
+      // RED if alarm signs present, fever, or zero daily reports
+      const isRed = hasAlarmSigns || hasFever || logs24h.length === 0;
+
+      // YELLOW rules
+      // Check missed dose (explicitly SKIPPED or PENDING older than 2 hours)
+      const hasMissedDose = medLogs24h.some(
+        (log) => log.status === 'SKIPPED' || (log.status === 'PENDING' && (Date.now() - log.scheduledAt.getTime()) > 2 * 60 * 60 * 1000),
+      );
+
+      const hasLowAppetite = logs24h.some((log) => log.appetiteLevel <= 2);
+
+      // Low energy is only a concern if the surgery was more than 3 days ago (otherwise rest is expected)
+      const daysSinceStart = (Date.now() - treatment.startDate.getTime()) / (24 * 60 * 60 * 1000);
+      const hasLowEnergyConcern = logs24h.some(
+        (log) => log.energyLevel <= 2 && daysSinceStart > 3,
+      );
+
+      const isYellow = !isRed && (hasMissedDose || hasLowAppetite || hasLowEnergyConcern);
+
+      let priority: 'RED' | 'YELLOW' | 'GREEN' = 'GREEN';
+      if (isRed) {
+        priority = 'RED';
+      } else if (isYellow) {
+        priority = 'YELLOW';
+      }
+
       const expectedDoses = treatment.rules.reduce(
         (sum, rule) => sum + Math.floor(24 / rule.frequencyHours),
         0,
       );
-      const actualDoses = logs24h.filter((log) => log.medicineTaken).length;
-      const hasLowLevels = logs24h.some(
-        (log) => log.appetiteLevel <= 2 || log.energyLevel <= 2,
-      );
-
-      let priority: 'RED' | 'YELLOW' | 'GREEN';
-
-      if (hasAlarmSigns || logs24h.length === 0) {
-        priority = 'RED';
-      } else if (actualDoses < expectedDoses || hasLowLevels) {
-        priority = 'YELLOW';
-      } else {
-        priority = 'GREEN';
-      }
+      const actualDoses = medLogs24h.filter(
+        (log) => log.status === 'GIVEN' || log.status === 'LATE',
+      ).length;
 
       return {
         treatmentId: treatment.id,
         pet: treatment.pet,
         diagnosis: treatment.diagnosis,
+        procedureType: treatment.procedureType,
         startDate: treatment.startDate,
         priority,
         stats: {
           expectedDoses,
           actualDoses,
           hasAlarmSigns,
-          hasLowLevels,
+          hasFever,
           logsCount24h: logs24h.length,
+          medLogsCount24h: medLogs24h.length,
         },
         recentLogs: logs24h.slice(0, 3),
       };

@@ -1,11 +1,12 @@
 import {
-  Controller, Get, Post, Patch,
+  Controller, Get, Post, Patch, Delete,
   Body, Param, UseGuards, Request,
 } from '@nestjs/common';
 import { ClinicsService } from './clinics.service';
 import { CreateClinicDto } from './dto/create-clinic.dto';
 import { UpdateClinicDto } from './dto/update-clinic.dto';
 import { InviteMemberDto } from './dto/invite-member.dto';
+import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -49,6 +50,14 @@ export class ClinicsController {
     return this.clinicsService.findOne(clinicId, req.user.userId);
   }
 
+  @Get(':clinicId/stats')
+  async getStats(
+    @Param('clinicId') clinicId: string,
+    @Request() req: { user: { userId: string } },
+  ) {
+    return this.clinicsService.getClinicStats(clinicId, req.user.userId);
+  }
+
   @Patch(':clinicId')
   async update(
     @Param('clinicId') clinicId: string,
@@ -77,12 +86,19 @@ export class ClinicsController {
     return this.clinicsService.inviteMember(clinicId, req.user.userId, dto);
   }
 
-  @Post('invitations/:token/accept')
-  async acceptInvitation(
-    @Param('token') token: string,
+  @Patch(':clinicId/members/:memberUserId/role')
+  async updateMemberRole(
+    @Param('clinicId') clinicId: string,
+    @Param('memberUserId') memberUserId: string,
     @Request() req: { user: { userId: string } },
+    @Body() dto: UpdateMemberRoleDto,
   ) {
-    return this.clinicsService.acceptInvitation(token, req.user.userId);
+    return this.clinicsService.updateMemberRole(
+      clinicId,
+      req.user.userId,
+      memberUserId,
+      dto.role,
+    );
   }
 
   @Patch(':clinicId/members/:memberUserId/remove')
@@ -93,4 +109,23 @@ export class ClinicsController {
   ) {
     return this.clinicsService.removeMember(clinicId, req.user.userId, memberUserId);
   }
-}
+
+  // ── Invitaciones ──
+
+  @Get(':clinicId/invitations')
+  async getInvitations(
+    @Param('clinicId') clinicId: string,
+    @Request() req: { user: { userId: string } },
+  ) {
+    return this.clinicsService.getInvitations(clinicId, req.user.userId);
+  }
+
+  @Delete(':clinicId/invitations/:invitationId')
+  async cancelInvitation(
+    @Param('clinicId') clinicId: string,
+    @Param('invitationId') invitationId: string,
+    @Request() req: { user: { userId: string } },
+  ) {
+    return this.clinicsService.cancelInvitation(clinicId, req.user.userId, invitationId);
+  }
+}

@@ -27,8 +27,8 @@ interface LoginResponse {
 const ROLE_REDIRECTS: Record<string, string> = {
   VET: '/vet',
   OWNER: '/owner',
-  CLINIC_ADMIN: '/vet',
-  SUPER_ADMIN: '/vet',
+  CLINIC_ADMIN: '/clinic-admin',
+  SUPER_ADMIN: '/clinic-admin',
 };
 
 export default function LoginPage() {

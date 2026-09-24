@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../config/theme/app_theme.dart';
+import '../../../../config/theme/app_theme.dart';
 import '../../widgets/log_timeline_card.dart';
 import '../bloc/daily_logs_bloc.dart';
 import '../bloc/daily_logs_event.dart';
@@ -51,7 +51,7 @@ class _DailyLogsHistoryPageState extends State<DailyLogsHistoryPage> {
                       Icon(
                         Icons.history_toggle_off_rounded,
                         size: 64,
-                        color: AppTheme.textMuted.withOpacity(0.3),
+                        color: AppTheme.textMuted.withValues(alpha: 0.3),
                       ),
                       const SizedBox(height: 16),
                       const Text(
@@ -62,7 +62,7 @@ class _DailyLogsHistoryPageState extends State<DailyLogsHistoryPage> {
                       const Text(
                         'Registra el primer reporte diario desde la ficha de tu mascota.',
                         style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
-                        textAlign: Center,
+                        textAlign: TextAlign.center,
                       ),
                     ],
                   ),

@@ -5,7 +5,10 @@ class DailyLogModel {
   final bool medicineTaken;
   final int appetiteLevel;
   final int energyLevel;
+  final int? painLevel;
+  final double? temperature;
   final String? alarmSigns;
+  final String? observations;
   final String? imageUrl;
 
   const DailyLogModel({
@@ -15,7 +18,10 @@ class DailyLogModel {
     required this.medicineTaken,
     required this.appetiteLevel,
     required this.energyLevel,
+    this.painLevel,
+    this.temperature,
     this.alarmSigns,
+    this.observations,
     this.imageUrl,
   });
 
@@ -27,7 +33,10 @@ class DailyLogModel {
       medicineTaken: json['medicineTaken'] as bool,
       appetiteLevel: json['appetiteLevel'] as int,
       energyLevel: json['energyLevel'] as int,
+      painLevel: json['painLevel'] as int?,
+      temperature: (json['temperature'] as num?)?.toDouble(),
       alarmSigns: json['alarmSigns'] as String?,
+      observations: json['observations'] as String?,
       imageUrl: json['imageUrl'] as String?,
     );
   }
@@ -40,7 +49,10 @@ class DailyLogModel {
       'medicineTaken': medicineTaken,
       'appetiteLevel': appetiteLevel,
       'energyLevel': energyLevel,
+      'painLevel': painLevel,
+      'temperature': temperature,
       'alarmSigns': alarmSigns,
+      'observations': observations,
       'imageUrl': imageUrl,
     };
   }

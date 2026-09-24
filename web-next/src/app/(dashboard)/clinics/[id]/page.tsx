@@ -6,6 +6,23 @@ import useSWR from 'swr';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import {
+  Building2,
+  MapPin,
+  Mail,
+  Phone,
+  Star,
+  Users,
+  UserPlus,
+  ArrowLeft,
+  AlertTriangle,
+  CheckCircle2,
+  X,
+  Sliders,
+  Copy,
+  Check,
+  Trash2,
+} from 'lucide-react';
 import { api, ApiError } from '@/lib/api-client';
 import { translateRole } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -31,6 +48,15 @@ interface ClinicDetail {
   }>;
 }
 
+interface InvitationItem {
+  id: string;
+  email: string;
+  role: string;
+  token: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
 const inviteSchema = z.object({
   email: z.string().email('Email inválido'),
   role: z.enum(['VET', 'OWNER', 'CLINIC_ADMIN']),
@@ -46,10 +72,16 @@ export default function ClinicDetailPage({
   const { id } = use(params);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
   const [showInvite, setShowInvite] = useState(false);
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
 
   const { data: clinic, isLoading, error, mutate } = useSWR<ClinicDetail>(
     `/clinics/${id}`,
     (url: string) => api.get<ClinicDetail>(url)
+  );
+
+  const { data: invitations, mutate: mutateInvitations } = useSWR<InvitationItem[]>(
+    `/clinics/${id}/invitations`,
+    (url: string) => api.get<InvitationItem[]>(url).catch(() => [])
   );
 
   const { register, handleSubmit, reset, formState: { isSubmitting, errors } } = useForm<InviteForm>({
@@ -60,14 +92,33 @@ export default function ClinicDetailPage({
   const onInvite = async (data: InviteForm) => {
     try {
       await api.post(`/clinics/${id}/members/invite`, data);
-      setToast({ message: '✅ Invitación enviada correctamente', type: 'success' });
+      setToast({ message: 'Invitación enviada correctamente', type: 'success' });
       reset();
       setShowInvite(false);
       mutate();
+      mutateInvitations();
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Error al enviar invitación';
       setToast({ message: msg, type: 'error' });
     }
+  };
+
+  const onCancelInvite = async (invitationId: string) => {
+    try {
+      await api.delete(`/clinics/${id}/invitations/${invitationId}`);
+      setToast({ message: 'Invitación cancelada', type: 'info' });
+      mutateInvitations();
+    } catch (err) {
+      setToast({ message: 'Error al cancelar invitación', type: 'error' });
+    }
+  };
+
+  const handleCopyInviteLink = (token: string) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    navigator.clipboard.writeText(`${origin}/invitations/${token}`);
+    setCopiedToken(token);
+    setToast({ message: 'Enlace copiado al portapapeles', type: 'success' });
+    setTimeout(() => setCopiedToken(null), 3000);
   };
 
   const roleColors: Record<string, string> = {
@@ -82,8 +133,12 @@ export default function ClinicDetailPage({
   if (error || !clinic) {
     return (
       <div className="page">
-        <div className="error-banner">No se pudo cargar la clínica.</div>
-        <Link href="/clinics" className="btn-secondary mt-4">← Volver</Link>
+        <div className="error-banner" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <AlertTriangle className="w-4 h-4 text-rose-400" /> No se pudo cargar la clínica.
+        </div>
+        <Link href="/clinics" className="btn-secondary mt-4" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}>
+          <ArrowLeft className="w-4 h-4" /> Volver
+        </Link>
       </div>
     );
   }
@@ -100,18 +155,32 @@ export default function ClinicDetailPage({
 
       {/* Clinic header */}
       <div className="clinic-detail-header glass-card">
-        <div className="clinic-detail-icon">🏥</div>
+        <div className="clinic-detail-icon" style={{ background: 'rgba(20,184,166,0.1)', color: 'var(--color-accent)', padding: '16px', borderRadius: '14px' }}>
+          <Building2 className="w-8 h-8" />
+        </div>
         <div className="clinic-detail-info">
           <h1 className="clinic-detail-name">{clinic.name}</h1>
           <p className="clinic-detail-slug">@{clinic.slug}</p>
-          <div className="clinic-detail-meta">
-            {clinic.email && <span>✉️ {clinic.email}</span>}
-            {clinic.phone && <span>📞 {clinic.phone}</span>}
-            {clinic.address && <span>📍 {clinic.address}</span>}
+          <div className="clinic-detail-meta" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '4px' }}>
+            {clinic.email && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <Mail className="w-3.5 h-3.5 text-slate-400" /> {clinic.email}
+              </span>
+            )}
+            {clinic.phone && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <Phone className="w-3.5 h-3.5 text-slate-400" /> {clinic.phone}
+              </span>
+            )}
+            {clinic.address && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <MapPin className="w-3.5 h-3.5 text-slate-400" /> {clinic.address}
+              </span>
+            )}
           </div>
           {clinic.subscription && (
-            <span className="clinic-plan-badge">
-              ⭐ Plan {clinic.subscription.planType} · {clinic.subscription.status}
+            <span className="clinic-plan-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '8px' }}>
+              <Star className="w-3.5 h-3.5 text-amber-400" /> Plan {clinic.subscription.planType} · {clinic.subscription.status}
             </span>
           )}
         </div>
@@ -131,23 +200,48 @@ export default function ClinicDetailPage({
         </div>
       </div>
 
+      {/* Admin Dashboard Quick Access */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem', marginBottom: '1.5rem' }}>
+        <Link
+          href="/clinic-admin"
+          className="btn-primary"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            textDecoration: 'none',
+            fontSize: '0.875rem',
+            padding: '0.55rem 1.15rem',
+            borderRadius: '10px',
+          }}
+        >
+          <Sliders className="w-4 h-4" /> Abrir Dashboard de Administrador
+        </Link>
+      </div>
+
       {/* Members section */}
       <div className="members-section">
-        <div className="members-header">
-          <h2 className="section-title">👥 Miembros del equipo</h2>
+        <div className="members-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h2 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Users className="w-5 h-5 text-teal-400" /> Miembros del equipo
+          </h2>
           <Button
             id="invite-member-btn"
             size="sm"
             onClick={() => setShowInvite(!showInvite)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
-            {showInvite ? 'Cancelar' : '+ Invitar miembro'}
+            {showInvite ? <X className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+            {showInvite ? 'Cancelar' : 'Invitar miembro'}
           </Button>
         </div>
 
         {/* Invite form */}
         {showInvite && (
           <div className="invite-form-container glass-card animate-fade-in">
-            <h3 className="invite-form-title">Invitar nuevo miembro</h3>
+            <h3 className="invite-form-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <UserPlus className="w-4 h-4 text-teal-400" /> Invitar nuevo miembro
+            </h3>
             <form onSubmit={handleSubmit(onInvite)} className="invite-form">
               <Input
                 id="invite-email"
@@ -175,7 +269,7 @@ export default function ClinicDetailPage({
         {/* Members list */}
         {!clinic.members || clinic.members.length === 0 ? (
           <div className="empty-state">
-            <span className="empty-state-icon">👥</span>
+            <Users className="w-10 h-10 text-slate-500 mb-2" />
             <p className="empty-state-text">No hay miembros registrados</p>
           </div>
         ) : (
@@ -194,6 +288,56 @@ export default function ClinicDetailPage({
                 </span>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Pending invitations */}
+        {invitations && invitations.length > 0 && (
+          <div style={{ marginTop: '2rem' }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Mail className="w-4 h-4 text-teal-400" /> Invitaciones Pendientes ({invitations.length})
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {invitations.map((inv) => (
+                <div
+                  key={inv.id}
+                  className="glass-card"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0.75rem 1rem',
+                    flexWrap: 'wrap',
+                    gap: '0.5rem',
+                  }}
+                >
+                  <div>
+                    <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{inv.email}</span>
+                    <span className={`role-badge ${roleColors[inv.role] ?? ''}`} style={{ marginLeft: '8px' }}>
+                      {translateRole(inv.role)}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCopyInviteLink(inv.token)}
+                      style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      {copiedToken === inv.token ? <><Check className="w-3 h-3 text-emerald-500" /> Copiado</> : <><Copy className="w-3 h-3" /> Copiar Enlace</>}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onCancelInvite(inv.id)}
+                      style={{ fontSize: '0.75rem', color: '#dc2626', borderColor: 'rgba(239,68,68,0.3)' }}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

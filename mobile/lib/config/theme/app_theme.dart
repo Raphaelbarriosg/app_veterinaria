@@ -54,7 +54,7 @@ class AppTheme {
       ),
 
       // Estilo de tarjetas
-      cardTheme: const CardTheme(
+      cardTheme: const CardThemeData(
         color: surfaceSlate,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -82,21 +82,21 @@ class AppTheme {
       // Estilo de inputs (Text fields)
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: darkMetallic.withOpacity(0.5),
+        fillColor: darkMetallic.withValues(alpha: 0.5),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: darkMetallic, width: 1),
+          borderSide: const BorderSide(color: darkMetallic, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: primaryMint, width: 2),
         ),
         labelStyle: GoogleFonts.inter(color: textMuted),
-        hintStyle: GoogleFonts.inter(color: textMuted.withOpacity(0.5)),
+        hintStyle: GoogleFonts.inter(color: textMuted.withValues(alpha: 0.5)),
       ),
     );
   }

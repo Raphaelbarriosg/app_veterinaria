@@ -20,7 +20,10 @@ class CreateDailyLogRequested extends DailyLogsEvent {
   final bool medicineTaken;
   final int appetiteLevel;
   final int energyLevel;
+  final int? painLevel;
+  final double? temperature;
   final String? alarmSigns;
+  final String? observations;
   final String? imagePath; // Path local para subir a Cloudinary
 
   const CreateDailyLogRequested({
@@ -28,10 +31,16 @@ class CreateDailyLogRequested extends DailyLogsEvent {
     required this.medicineTaken,
     required this.appetiteLevel,
     required this.energyLevel,
+    this.painLevel,
+    this.temperature,
     this.alarmSigns,
+    this.observations,
     this.imagePath,
   });
 
   @override
-  List<Object?> get props => [treatmentId, medicineTaken, appetiteLevel, energyLevel, alarmSigns, imagePath];
+  List<Object?> get props => [
+    treatmentId, medicineTaken, appetiteLevel, energyLevel,
+    painLevel, temperature, alarmSigns, observations, imagePath,
+  ];
 }

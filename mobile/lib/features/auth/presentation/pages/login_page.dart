@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../config/theme/app_theme.dart';
+import '../../../../config/theme/app_theme.dart';
 import '../../widgets/auth_text_field.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
@@ -74,7 +74,7 @@ class _LoginPageState extends State<LoginPage> {
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryMint.withOpacity(0.1),
+                            color: AppTheme.primaryMint.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -89,13 +89,13 @@ class _LoginPageState extends State<LoginPage> {
                       Text(
                         'VetCare MVP',
                         style: Theme.of(context).textTheme.headlineLarge,
-                        textAlign: Center,
+                        textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Seguimiento post-operatorio inteligente',
                         style: Theme.of(context).textTheme.bodyMedium,
-                        textAlign: Center,
+                        textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 48),
                       // Campo Email

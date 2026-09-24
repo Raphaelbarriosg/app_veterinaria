@@ -1,12 +1,13 @@
-import 'package:dio/dio.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/storage/secure_storage.dart';
+import '../../../../core/services/push_notification_service.dart';
 import '../../../../config/constants/api_constants.dart';
 import '../models/user_model.dart';
 
 class AuthRepository {
   final ApiClient _apiClient;
   final SecureStorage _storage = SecureStorage();
+  final PushNotificationService _pushService = PushNotificationService();
 
   AuthRepository(this._apiClient);
 
@@ -31,7 +32,13 @@ class AuthRepository {
 
     final data = response.data;
     await _storage.saveToken(data['accessToken']);
+    if (data['refreshToken'] != null) {
+      await _storage.saveRefreshToken(data['refreshToken']);
+    }
     await _storage.saveRole(data['user']['role']);
+
+    // Registrar token del dispositivo en el backend en segundo plano
+    _pushService.registerWithBackend().catchError((_) => false);
 
     return UserModel.fromJson(data['user']);
   }
@@ -51,7 +58,13 @@ class AuthRepository {
 
     final data = response.data;
     await _storage.saveToken(data['accessToken']);
+    if (data['refreshToken'] != null) {
+      await _storage.saveRefreshToken(data['refreshToken']);
+    }
     await _storage.saveRole(data['user']['role']);
+
+    // Registrar token del dispositivo en el backend en segundo plano
+    _pushService.registerWithBackend().catchError((_) => false);
 
     return UserModel.fromJson(data['user']);
   }
@@ -76,13 +89,18 @@ class AuthRepository {
 
   /// Cerrar sesión
   Future<void> logout() async {
+    await _pushService.unregisterFromBackend().catchError((_) {});
     await _storage.clearAll();
   }
 
   /// Verificar si hay sesión activa
   Future<bool> hasActiveSession() async {
     final token = await _storage.getToken();
-    return token != null && token.isNotEmpty;
+    final hasSession = token != null && token.isNotEmpty;
+    if (hasSession) {
+      _pushService.registerWithBackend().catchError((_) => false);
+    }
+    return hasSession;
   }
 
   /// Obtener rol guardado

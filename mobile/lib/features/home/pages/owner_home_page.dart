@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../config/theme/app_theme.dart';
-import '../../../auth/presentation/bloc/auth_bloc.dart';
-import '../../../auth/presentation/bloc/auth_event.dart';
-import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../auth/presentation/bloc/auth_bloc.dart';
+import '../../auth/presentation/bloc/auth_event.dart';
+import '../../auth/presentation/bloc/auth_state.dart';
 import '../../pets/presentation/pages/pets_list_page.dart';
 
 class OwnerHomePage extends StatefulWidget {
@@ -89,7 +89,7 @@ class _OwnerProfileTab extends StatelessWidget {
                       width: 100,
                       height: 100,
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryMint.withOpacity(0.1),
+                        color: AppTheme.primaryMint.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                         border: Border.all(color: AppTheme.primaryMint, width: 2),
                       ),
@@ -111,14 +111,14 @@ class _OwnerProfileTab extends StatelessWidget {
                   Text(
                     user.name,
                     style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontSize: 24),
-                    textAlign: Center,
+                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 4),
-                  Container(
-                    alignSelf: Center,
+                  Center(
+                    child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryMint.withOpacity(0.15),
+                      color: AppTheme.primaryMint.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Text(
@@ -129,6 +129,7 @@ class _OwnerProfileTab extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                  ),
                   ),
                   
                   const SizedBox(height: 40),

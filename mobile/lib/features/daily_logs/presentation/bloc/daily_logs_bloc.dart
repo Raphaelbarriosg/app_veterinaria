@@ -26,9 +26,9 @@ class DailyLogsBloc extends Bloc<DailyLogsEvent, DailyLogsState> {
     try {
       String? imageUrl;
 
-      // 1. Subir a Cloudinary si hay una foto adjunta
+      // 1. Subir imagen al backend (Supabase Storage) si hay una foto adjunta
       if (event.imagePath != null) {
-        imageUrl = await _dailyLogsRepository.uploadImageToCloudinary(event.imagePath!);
+        imageUrl = await _dailyLogsRepository.uploadImage(event.imagePath!);
       }
 
       // 2. Guardar el log en la base de datos
@@ -37,7 +37,10 @@ class DailyLogsBloc extends Bloc<DailyLogsEvent, DailyLogsState> {
         medicineTaken: event.medicineTaken,
         appetiteLevel: event.appetiteLevel,
         energyLevel: event.energyLevel,
+        painLevel: event.painLevel,
+        temperature: event.temperature,
         alarmSigns: event.alarmSigns,
+        observations: event.observations,
         imageUrl: imageUrl,
       );
 

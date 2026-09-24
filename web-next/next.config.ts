@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   // BFF proxy handles API calls
   images: {
     remotePatterns: [
+      { protocol: 'https', hostname: '**.supabase.co' },
       { protocol: 'https', hostname: 'res.cloudinary.com' },
       { protocol: 'https', hostname: 'images.unsplash.com' },
     ],

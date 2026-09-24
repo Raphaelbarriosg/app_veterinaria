@@ -22,6 +22,7 @@ import 'features/auth/presentation/pages/login_page.dart';
 import 'features/auth/presentation/pages/register_page.dart';
 import 'features/home/pages/owner_home_page.dart';
 import 'features/home/pages/vet_home_page.dart';
+import 'features/home/pages/clinic_admin_home_page.dart';
 import 'features/pets/presentation/pages/pet_detail_page.dart';
 import 'features/pets/presentation/pages/pet_form_page.dart';
 import 'features/pets/data/models/pet_model.dart';
@@ -80,6 +81,8 @@ class VetApp extends StatelessWidget {
                 return MaterialPageRoute(builder: (_) => const OwnerHomePage());
               case '/vet-home':
                 return MaterialPageRoute(builder: (_) => const VetHomePage());
+              case '/clinic-admin-home':
+                return MaterialPageRoute(builder: (_) => const ClinicAdminHomePage());
               case '/pet-detail':
                 final petId = settings.arguments as String;
                 return MaterialPageRoute(builder: (_) => PetDetailPage(petId: petId));
@@ -129,6 +132,8 @@ class _AuthGate extends StatelessWidget {
         } else if (state is Authenticated) {
           if (state.user.role == 'VET') {
             return const VetHomePage();
+          } else if (state.user.role == 'CLINIC_ADMIN') {
+            return const ClinicAdminHomePage();
           } else {
             return const OwnerHomePage();
           }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../config/theme/app_theme.dart';
+import '../../../../config/theme/app_theme.dart';
 import '../../widgets/auth_text_field.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
@@ -104,8 +104,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                                 decoration: BoxDecoration(
                                   color: _selectedRole == 'OWNER'
-                                      ? AppTheme.primaryMint.withOpacity(0.15)
-                                      : AppTheme.darkMetallic.withOpacity(0.3),
+                                      ? AppTheme.primaryMint.withValues(alpha: 0.15)
+                                      : AppTheme.darkMetallic.withValues(alpha: 0.3),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: _selectedRole == 'OWNER' ? AppTheme.primaryMint : AppTheme.darkMetallic,
@@ -140,8 +140,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                                 decoration: BoxDecoration(
                                   color: _selectedRole == 'VET'
-                                      ? AppTheme.primaryMint.withOpacity(0.15)
-                                      : AppTheme.darkMetallic.withOpacity(0.3),
+                                      ? AppTheme.primaryMint.withValues(alpha: 0.15)
+                                      : AppTheme.darkMetallic.withValues(alpha: 0.3),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: _selectedRole == 'VET' ? AppTheme.primaryMint : AppTheme.darkMetallic,

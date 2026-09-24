@@ -1,8 +1,9 @@
 import {
   IsNotEmpty, IsString, IsDateString, IsUUID,
-  IsOptional, IsEnum, IsArray, ValidateNested,
+  IsOptional, IsEnum, IsArray, ValidateNested, IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ProcedureType } from '@prisma/client';
 
 export class CreateTreatmentRuleDto {
   @IsString()
@@ -17,6 +18,7 @@ export class CreateTreatmentRuleDto {
   frequencyHours!: number;
 
   @IsOptional()
+  @IsBoolean()
   requirePhoto?: boolean;
 }
 
@@ -27,6 +29,10 @@ export class CreateTreatmentDto {
   @IsString()
   @IsNotEmpty()
   diagnosis!: string;
+
+  @IsOptional()
+  @IsEnum(ProcedureType)
+  procedureType?: ProcedureType;
 
   @IsDateString()
   startDate!: string;
@@ -41,3 +47,4 @@ export class CreateTreatmentDto {
   @Type(() => CreateTreatmentRuleDto)
   rules?: CreateTreatmentRuleDto[];
 }
+

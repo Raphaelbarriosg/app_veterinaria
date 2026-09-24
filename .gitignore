@@ -8,6 +8,8 @@
 .env.*.local
 **/.env
 **/.env.local
+credenciales*.txt
+*.txt.secret
 
 # ── Backend (NestJS) ──────────────────────────────────────────────────────────
 backend/node_modules/

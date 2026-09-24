@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../config/theme/app_theme.dart';
-import '../../widgets/auth_text_field.dart'; // Reutilizamos el input estilizado
-import '../data/models/pet_model.dart';
+import '../../../../config/theme/app_theme.dart';
+import '../../../auth/widgets/auth_text_field.dart';
+import '../../data/models/pet_model.dart';
 import '../bloc/pets_bloc.dart';
 import '../bloc/pets_event.dart';
 import '../bloc/pets_state.dart';
@@ -167,7 +167,7 @@ class _PetFormPageState extends State<PetFormPage> {
 
                     // Selector de Especie (Dropdown)
                     DropdownButtonFormField<String>(
-                      value: _selectedSpecies,
+                      initialValue: _selectedSpecies,
                       decoration: const InputDecoration(
                         labelText: 'Especie',
                         prefixIcon: Icon(Icons.category_outlined, color: AppTheme.textMuted),
@@ -223,7 +223,7 @@ class _PetFormPageState extends State<PetFormPage> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
                         decoration: BoxDecoration(
-                          color: AppTheme.darkMetallic.withOpacity(0.25),
+                          color: AppTheme.darkMetallic.withValues(alpha: 0.25),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: AppTheme.darkMetallic, width: 1),
                         ),

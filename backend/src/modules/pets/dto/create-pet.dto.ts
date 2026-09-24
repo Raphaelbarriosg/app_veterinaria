@@ -20,4 +20,8 @@ export class CreatePetDto {
   @IsOptional()
   @IsDateString()
   birthDate?: string;
+
+  @IsOptional()
+  @IsString()
+  microchip?: string;
 }

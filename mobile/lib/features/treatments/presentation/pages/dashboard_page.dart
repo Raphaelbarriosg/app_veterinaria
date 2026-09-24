@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../config/theme/app_theme.dart';
+import '../../../../config/theme/app_theme.dart';
 import '../../widgets/treatment_card.dart';
 import '../bloc/treatments_bloc.dart';
 import '../bloc/treatments_event.dart';
@@ -54,7 +54,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       Icon(
                         Icons.dashboard_customize_outlined,
                         size: 80,
-                        color: AppTheme.textMuted.withOpacity(0.3),
+                        color: AppTheme.textMuted.withValues(alpha: 0.3),
                       ),
                       const SizedBox(height: 16),
                       const Text(
@@ -70,21 +70,22 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                       const SizedBox(height: 24),
                       ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.of(context).pushNamed('/create-treatment').then((_) {
-                            context.read<TreatmentsBloc>().add(LoadVetDashboard());
-                          });
-                        },
-                        icon: const Icon(Icons.add_rounded),
-                        label: const Text('Crear Tratamiento'),
-                      ),
-                    ],
+                          onPressed: () {
+                            Navigator.of(context).pushNamed('/create-treatment').then((_) {
+                              if (!context.mounted) return;
+                              context.read<TreatmentsBloc>().add(LoadVetDashboard());
+                            });
+                          },
+                          icon: const Icon(Icons.add_rounded),
+                          label: const Text('Crear Tratamiento'),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            }
+                );
+              }
 
-            // Separar y contar estados para el resumen superior
+              // Separar y contar estados para el resumen superior
             final redCount = items.where((i) => i.priority == 'RED').length;
             final yellowCount = items.where((i) => i.priority == 'YELLOW').length;
             final greenCount = items.where((i) => i.priority == 'GREEN').length;
@@ -124,6 +125,7 @@ class _DashboardPageState extends State<DashboardPage> {
                               '/treatment-detail',
                               arguments: item.treatmentId,
                             ).then((_) {
+                              if (!context.mounted) return;
                               context.read<TreatmentsBloc>().add(LoadVetDashboard());
                             });
                           },
@@ -161,6 +163,7 @@ class _DashboardPageState extends State<DashboardPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         onPressed: () {
           Navigator.of(context).pushNamed('/create-treatment').then((_) {
+            if (!context.mounted) return;
             context.read<TreatmentsBloc>().add(LoadVetDashboard());
           });
         },
@@ -174,9 +177,9 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
+          color: color.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3), width: 1),
+          border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
         ),
         child: Column(
           children: [

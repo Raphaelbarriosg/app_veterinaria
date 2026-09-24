@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../config/theme/app_theme.dart';
+import '../../../../config/theme/app_theme.dart';
 import '../bloc/pets_bloc.dart';
 import '../bloc/pets_event.dart';
 import '../bloc/pets_state.dart';
@@ -14,7 +14,6 @@ class PetDetailPage extends StatefulWidget {
   State<PetDetailPage> createState() => _PetDetailPageState();
 }
 
-class _LoginPageState {} // Evitar linter si detecta cosas raras, o mejor directo
 
 class _PetDetailPageState extends State<PetDetailPage> {
   @override
@@ -70,6 +69,7 @@ class _PetDetailPageState extends State<PetDetailPage> {
                   '/pet-form',
                   arguments: state.pet,
                 ).then((_) {
+                  if (!context.mounted) return;
                   context.read<PetsBloc>().add(LoadPetDetail(widget.petId));
                 });
               }
@@ -118,9 +118,9 @@ class _PetDetailPageState extends State<PetDetailPage> {
                           width: 90,
                           height: 90,
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryMint.withOpacity(0.1),
+                            color: AppTheme.primaryMint.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
-                            border: Border.all(color: AppTheme.primaryMint.withOpacity(0.3), width: 2),
+                            border: Border.all(color: AppTheme.primaryMint.withValues(alpha: 0.3), width: 2),
                           ),
                           child: Center(
                             child: Text(
@@ -219,6 +219,7 @@ class _PetDetailPageState extends State<PetDetailPage> {
                                   '/daily-log-form',
                                   arguments: activeTreatment['id'] as String,
                                 ).then((_) {
+                                  if (!context.mounted) return;
                                   context.read<PetsBloc>().add(LoadPetDetail(widget.petId));
                                 });
                               },
@@ -256,7 +257,7 @@ class _PetDetailPageState extends State<PetDetailPage> {
                               Icon(
                                 Icons.favorite_border_rounded,
                                 size: 40,
-                                color: AppTheme.textMuted.withOpacity(0.5),
+                                color: AppTheme.textMuted.withValues(alpha: 0.5),
                               ),
                               const SizedBox(height: 12),
                               const Text(
@@ -267,7 +268,7 @@ class _PetDetailPageState extends State<PetDetailPage> {
                               const Text(
                                 'Tu veterinario asignará tratamientos aquí en caso de cirugías.',
                                 style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
-                                textAlign: Center,
+                                textAlign: TextAlign.center,
                               ),
                             ],
                           ),

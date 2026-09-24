@@ -14,21 +14,17 @@ class SemaphoreIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Color color;
-    String label;
     
     switch (priority.toUpperCase()) {
       case 'RED':
         color = AppTheme.alertRed;
-        label = 'Crítico';
         break;
       case 'YELLOW':
         color = AppTheme.alertYellow;
-        label = 'Alerta';
         break;
       case 'GREEN':
       default:
         color = AppTheme.alertGreen;
-        label = 'Estable';
         break;
     }
 
@@ -40,7 +36,7 @@ class SemaphoreIndicator extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.6),
+            color: color.withValues(alpha: 0.6),
             blurRadius: 8,
             spreadRadius: 2,
           ),

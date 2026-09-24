@@ -1,4 +1,4 @@
-import 'user_model.dart';
+import '../../../auth/data/models/user_model.dart';
 
 class PetModel {
   final String id;

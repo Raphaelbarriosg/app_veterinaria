@@ -83,7 +83,7 @@ async function bootstrap() {
     .addTag('pets', 'Gestión de mascotas')
     .addTag('treatments', 'Tratamientos post-operativos')
     .addTag('daily-logs', 'Registros diarios de seguimiento')
-    .addTag('cloudinary', 'Gestión de imágenes')
+    .addTag('upload', 'Subida de imágenes a Supabase Storage')
     .addTag('health', 'Health checks')
     .build();
 
@@ -102,7 +102,7 @@ async function bootstrap() {
   });
 
   const port = process.env.PORT || 3000;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   
   logger.log(`==========================================`);
   logger.log(`🐾  Ecosistema Veterinario API`);

@@ -30,9 +30,9 @@ class PetCard extends StatelessWidget {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryMint.withOpacity(0.1),
+                  color: AppTheme.primaryMint.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppTheme.primaryMint.withOpacity(0.3), width: 1.5),
+                  border: Border.all(color: AppTheme.primaryMint.withValues(alpha: 0.3), width: 1.5),
                 ),
                 child: Center(
                   child: Text(
@@ -73,9 +73,9 @@ class PetCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AppTheme.alertYellow.withOpacity(0.15),
+                    color: AppTheme.alertYellow.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppTheme.alertYellow.withOpacity(0.5), width: 1),
+                    border: Border.all(color: AppTheme.alertYellow.withValues(alpha: 0.5), width: 1),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,

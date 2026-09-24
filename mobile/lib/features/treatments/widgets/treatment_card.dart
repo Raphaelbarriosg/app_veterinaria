@@ -21,14 +21,14 @@ class TreatmentCard extends StatelessWidget {
     Color cardBorderColor;
     switch (item.priority) {
       case 'RED':
-        cardBorderColor = AppTheme.alertRed.withOpacity(0.3);
+        cardBorderColor = AppTheme.alertRed.withValues(alpha: 0.3);
         break;
       case 'YELLOW':
-        cardBorderColor = AppTheme.alertYellow.withOpacity(0.3);
+        cardBorderColor = AppTheme.alertYellow.withValues(alpha: 0.3);
         break;
       case 'GREEN':
       default:
-        cardBorderColor = AppTheme.alertGreen.withOpacity(0.3);
+        cardBorderColor = AppTheme.alertGreen.withValues(alpha: 0.3);
         break;
     }
 
@@ -53,7 +53,7 @@ class TreatmentCard extends StatelessWidget {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryMint.withOpacity(0.1),
+                      color: AppTheme.primaryMint.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Center(

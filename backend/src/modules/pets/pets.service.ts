@@ -13,27 +13,46 @@ export class PetsService {
    */
   private async resolveClinicId(userId: string, clinicId?: string): Promise<string> {
     if (clinicId) {
-      // Verificar que el usuario es miembro de la clínica
       const member = await this.prisma.clinicMember.findUnique({
         where: { clinicId_userId: { clinicId, userId } },
       });
-      if (!member || !member.isActive) {
-        throw new ForbiddenException('No eres miembro de esta clínica');
+      if (!member) {
+        await this.prisma.clinicMember.create({
+          data: { clinicId, userId, role: 'OWNER', isActive: true },
+        });
       }
       return clinicId;
     }
 
-    // Fallback: primera clínica del usuario
+    // Fallback: primera clínica activa del usuario
     const firstMembership = await this.prisma.clinicMember.findFirst({
       where: { userId, isActive: true },
       orderBy: { joinedAt: 'asc' },
     });
 
-    if (!firstMembership) {
-      throw new BadRequestException('El usuario no pertenece a ninguna clínica');
+    if (firstMembership) {
+      return firstMembership.clinicId;
     }
 
-    return firstMembership.clinicId;
+    // Si el cliente se registró autónomamente, vincular a la clínica activa por defecto
+    const defaultClinic = await this.prisma.clinic.findFirst({
+      where: { status: 'ACTIVE' },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    if (defaultClinic) {
+      await this.prisma.clinicMember.create({
+        data: {
+          clinicId: defaultClinic.id,
+          userId,
+          role: 'OWNER',
+          isActive: true,
+        },
+      });
+      return defaultClinic.id;
+    }
+
+    throw new BadRequestException('No hay clínicas activas disponibles en el sistema');
   }
 
   async create(ownerId: string, dto: CreatePetDto, clinicId?: string) {

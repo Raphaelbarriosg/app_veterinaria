@@ -1,27 +1,29 @@
 import {
-  IsBoolean, IsInt, IsNumber, IsOptional, IsString, IsUUID, Max, Min,
+  IsBoolean, IsInt, IsNumber, IsOptional, IsString, IsUUID, Max, Min, IsEnum,
 } from 'class-validator';
+import { DailyLogType } from '@prisma/client';
 
 export class CreateDailyLogDto {
   @IsUUID()
   treatmentId!: string;
 
+  @IsOptional()
   @IsBoolean()
-  medicineTaken!: boolean;
+  medicineTaken?: boolean;
 
   @IsInt()
-  @Min(1)
-  @Max(5)
+  @Min(0)
+  @Max(10)
   appetiteLevel!: number;
 
   @IsInt()
-  @Min(1)
-  @Max(5)
+  @Min(0)
+  @Max(10)
   energyLevel!: number;
 
   @IsOptional()
   @IsInt()
-  @Min(1)
+  @Min(0)
   @Max(10)
   painLevel?: number;
 
@@ -40,5 +42,9 @@ export class CreateDailyLogDto {
   @IsOptional()
   @IsString()
   imageUrl?: string;
+
+  @IsOptional()
+  @IsEnum(DailyLogType)
+  logType?: DailyLogType;
 }
 

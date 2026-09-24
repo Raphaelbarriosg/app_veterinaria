@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../config/theme/app_theme.dart';
+import '../../../../config/theme/app_theme.dart';
 import '../../widgets/pet_card.dart';
 import '../bloc/pets_bloc.dart';
 import '../bloc/pets_event.dart';
@@ -48,7 +48,7 @@ class _PetsListPageState extends State<PetsListPage> {
                       Icon(
                         Icons.pets_outlined,
                         size: 80,
-                        color: AppTheme.textMuted.withOpacity(0.3),
+                        color: AppTheme.textMuted.withValues(alpha: 0.3),
                       ),
                       const SizedBox(height: 16),
                       const Text(
@@ -64,21 +64,22 @@ class _PetsListPageState extends State<PetsListPage> {
                       ),
                       const SizedBox(height: 24),
                       ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.of(context).pushNamed('/pet-form').then((_) {
-                            context.read<PetsBloc>().add(LoadPets());
-                          });
-                        },
-                        icon: const Icon(Icons.add_rounded),
-                        label: const Text('Registrar Mascota'),
-                      ),
-                    ],
+                          onPressed: () {
+                            Navigator.of(context).pushNamed('/pet-form').then((_) {
+                              if (!context.mounted) return;
+                              context.read<PetsBloc>().add(LoadPets());
+                            });
+                          },
+                          icon: const Icon(Icons.add_rounded),
+                          label: const Text('Registrar Mascota'),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            }
+                );
+              }
 
-            return RefreshIndicator(
+              return RefreshIndicator(
               color: AppTheme.primaryMint,
               onRefresh: () async {
                 context.read<PetsBloc>().add(LoadPets());
@@ -95,6 +96,7 @@ class _PetsListPageState extends State<PetsListPage> {
                         '/pet-detail',
                         arguments: pet.id,
                       ).then((_) {
+                        if (!context.mounted) return;
                         context.read<PetsBloc>().add(LoadPets());
                       });
                     },
@@ -129,6 +131,7 @@ class _PetsListPageState extends State<PetsListPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         onPressed: () {
           Navigator.of(context).pushNamed('/pet-form').then((_) {
+            if (!context.mounted) return;
             context.read<PetsBloc>().add(LoadPets());
           });
         },

@@ -8,7 +8,7 @@ Sistema completo para el **seguimiento post-operatorio de mascotas**, compuesto 
 app_veterinaria/
 ├── backend/     # API REST — NestJS 11 + PostgreSQL 17 + Prisma 6
 ├── mobile/      # App móvil — Flutter
-└── web/         # Frontend web — HTML/CSS/JS (Dark Mode)
+└── web-next/    # Frontend web — Next.js 16 + React 19 (Tailwind v4)
 ```
 
 ## 🚀 Stack Tecnológico
@@ -52,6 +52,7 @@ docker compose -f docker-compose.dev.yml up --build
 |-----|-------|----------|
 | Veterinario | `vet@test.com` | `vet123` |
 | Dueño | `owner@test.com` | `owner123` |
+| Admin Clínica | `admin@test.com` | `admin123` |
 
 ## 📚 Documentación
 
@@ -63,7 +64,8 @@ docker compose -f docker-compose.dev.yml up --build
 ## 🗄️ Modelo de Datos
 
 ```
-User (VET | OWNER)
+User (VET | OWNER | CLINIC_ADMIN | SUPER_ADMIN)
+  ├── Clinic (Multi-tenant)
   └── Pet
         └── Treatment
               ├── TreatmentRule  (medicación, dosis, frecuencia)
@@ -73,3 +75,4 @@ User (VET | OWNER)
 ## 📄 Licencia
 
 MIT © [Raphaelbarriosg](https://github.com/Raphaelbarriosg)
+

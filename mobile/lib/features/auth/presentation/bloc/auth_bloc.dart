@@ -65,7 +65,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       await _authRepository.logout();
       emit(Unauthenticated());
     } catch (e) {
-      emit(AuthError('Error al cerrar sesión'));
+      emit(const AuthError('Error al cerrar sesión'));
     }
   }
 

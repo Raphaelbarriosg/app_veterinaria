@@ -9,50 +9,37 @@ class DailyLogsRepository {
 
   DailyLogsRepository(this._apiClient);
 
-  /// Obtener firma y subir imagen a Cloudinary (Signed Upload)
-  Future<String?> uploadImageToCloudinary(String filePath) async {
+  /// Sube una imagen al backend (Supabase Storage vía /upload/image).
+  /// Retorna la URL pública de la imagen, o null si falla.
+  Future<String?> uploadImage(String filePath) async {
     try {
       final file = File(filePath);
       if (!await file.exists()) return null;
 
-      // 1. Obtener firma del backend
-      final sigResponse = await _apiClient.dio.get(
-        ApiConstants.cloudinarySignature,
-        queryParameters: {'folder': 'vet_app/daily_logs'},
-      );
-      final sigData = sigResponse.data;
-
-      final String cloudName = sigData['cloudName'];
-      final String apiKey = sigData['apiKey'];
-      final int timestamp = sigData['timestamp'];
-      final String signature = sigData['signature'];
-      final String folder = sigData['folder'];
-
-      // 2. Subir imagen directamente a Cloudinary mediante FormData
-      final cloudinaryUrl = 'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
       final fileName = filePath.split('/').last;
-
       final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(filePath, filename: fileName),
-        'api_key': apiKey,
-        'timestamp': timestamp.toString(),
-        'signature': signature,
-        'folder': folder,
+        'file': await MultipartFile.fromFile(
+          filePath,
+          filename: fileName,
+        ),
       });
 
-      // Creamos un dio limpio para la petición externa a Cloudinary sin interceptor JWT
-      final cleanDio = Dio();
-      final uploadResponse = await cleanDio.post(cloudinaryUrl, data: formData);
+      final response = await _apiClient.dio.post(
+        ApiConstants.uploadImage,
+        data: formData,
+        options: Options(contentType: 'multipart/form-data'),
+      );
 
-      if (uploadResponse.statusCode == 200 || uploadResponse.statusCode == 201) {
-        return uploadResponse.data['secure_url'] as String;
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data['url'] as String?;
       }
       return null;
     } catch (e) {
-      // Si falla Cloudinary (por ejemplo, si las credenciales no están configuradas), retornamos null
+      // Si falla el upload, continuamos sin imagen
       return null;
     }
   }
+
 
   /// Crear un daily log de evolución
   Future<DailyLogModel> createLog({
@@ -60,7 +47,10 @@ class DailyLogsRepository {
     required bool medicineTaken,
     required int appetiteLevel,
     required int energyLevel,
+    int? painLevel,
+    double? temperature,
     String? alarmSigns,
+    String? observations,
     String? imageUrl,
   }) async {
     final response = await _apiClient.dio.post(
@@ -70,19 +60,22 @@ class DailyLogsRepository {
         'medicineTaken': medicineTaken,
         'appetiteLevel': appetiteLevel,
         'energyLevel': energyLevel,
+        if (painLevel != null) 'painLevel': painLevel,
+        if (temperature != null) 'temperature': temperature,
         if (alarmSigns != null && alarmSigns.isNotEmpty) 'alarmSigns': alarmSigns,
+        if (observations != null && observations.isNotEmpty) 'observations': observations,
         if (imageUrl != null) 'imageUrl': imageUrl,
       },
     );
     return DailyLogModel.fromJson(response.data);
   }
 
-  /// Obtener historial de logs de un tratamiento
+  /// Obtener historial de logs de un tratamiento (respuesta paginada)
   Future<List<DailyLogModel>> getLogsByTreatment(String treatmentId) async {
     final response = await _apiClient.dio.get(
       '${ApiConstants.treatmentLogs}/$treatmentId',
     );
-    final list = response.data as List<dynamic>;
-    return list.map((json) => DailyLogModel.fromJson(json)).toList();
+    final data = response.data['data'] as List<dynamic>? ?? response.data as List<dynamic>;
+    return data.map((json) => DailyLogModel.fromJson(json)).toList();
   }
 }

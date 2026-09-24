@@ -2,9 +2,9 @@
 
 import useSWR from 'swr';
 import Link from 'next/link';
+import { Building2, MapPin, Mail, Star, Users, AlertTriangle } from 'lucide-react';
 import { api } from '@/lib/api-client';
 import type { Clinic } from '@/lib/utils';
-import { Spinner } from '@/components/ui/spinner';
 
 function ClinicCardSkeleton() {
   return (
@@ -18,6 +18,7 @@ function ClinicCardSkeleton() {
 }
 
 export default function ClinicsPage() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: clinics, isLoading, error } = useSWR<Clinic[]>(
     '/clinics',
     (url: string) => api.get<any[]>(url).then((res) => res.map((item) => item.clinic))
@@ -40,14 +41,16 @@ export default function ClinicsPage() {
     <div className="page animate-fade-in">
       <div className="page-header">
         <div>
-          <h1 className="page-title">🏥 Mis Clínicas</h1>
-          <p className="page-subtitle">Gestión de clínicas y equipos</p>
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Building2 className="w-7 h-7 text-teal-400" /> Mis Clínicas
+          </h1>
+          <p className="page-subtitle">Gestión de clínicas y equipos de trabajo</p>
         </div>
       </div>
 
       {error && (
-        <div className="error-banner">
-          ⚠️ No se pudo cargar la información de clínicas.
+        <div className="error-banner" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <AlertTriangle className="w-4 h-4 text-rose-400" /> No se pudo cargar la información de clínicas.
         </div>
       )}
 
@@ -57,7 +60,7 @@ export default function ClinicsPage() {
         </div>
       ) : !clinics || clinics.length === 0 ? (
         <div className="empty-state large">
-          <span className="empty-state-icon">🏥</span>
+          <Building2 className="w-12 h-12 text-slate-500 mb-3" />
           <h2 className="empty-state-title">No estás asociado a ninguna clínica</h2>
           <p className="empty-state-text">
             Contacta con un administrador para ser agregado a una clínica.
@@ -68,7 +71,9 @@ export default function ClinicsPage() {
           {clinics.map((clinic) => (
             <Link key={clinic.id} href={`/clinics/${clinic.id}`} className="clinic-card">
               <div className="clinic-card-header">
-                <div className="clinic-icon">🏥</div>
+                <div className="clinic-icon" style={{ background: 'rgba(20,184,166,0.1)', color: 'var(--color-accent)', padding: '10px', borderRadius: '10px' }}>
+                  <Building2 className="w-6 h-6" />
+                </div>
                 <div>
                   <h3 className="clinic-name">{clinic.name}</h3>
                   <p className="clinic-slug">@{clinic.slug}</p>
@@ -78,8 +83,16 @@ export default function ClinicsPage() {
                 </span>
               </div>
 
-              {clinic.address && <p className="clinic-address">📍 {clinic.address}</p>}
-              {clinic.email && <p className="clinic-email">✉️ {clinic.email}</p>}
+              {clinic.address && (
+                <p className="clinic-address" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <MapPin className="w-3.5 h-3.5 text-slate-400" /> {clinic.address}
+                </p>
+              )}
+              {clinic.email && (
+                <p className="clinic-email" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Mail className="w-3.5 h-3.5 text-slate-400" /> {clinic.email}
+                </p>
+              )}
 
               <div className="clinic-stats">
                 {clinic._count && (
@@ -102,8 +115,8 @@ export default function ClinicsPage() {
 
               {clinic.subscription && (
                 <div className="clinic-plan">
-                  <span className="clinic-plan-badge">
-                    ⭐ Plan {planLabels[clinic.subscription.planType] ?? clinic.subscription.planType}
+                  <span className="clinic-plan-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <Star className="w-3.5 h-3.5 text-amber-400" /> Plan {planLabels[clinic.subscription.planType] ?? clinic.subscription.planType}
                   </span>
                 </div>
               )}

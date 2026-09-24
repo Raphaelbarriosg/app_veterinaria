@@ -18,6 +18,8 @@ export default function DashboardPage() {
     }
     if (user.role === 'OWNER') {
       router.replace('/owner');
+    } else if (user.role === 'CLINIC_ADMIN' || user.role === 'SUPER_ADMIN') {
+      router.replace('/clinic-admin');
     } else {
       router.replace('/vet');
     }

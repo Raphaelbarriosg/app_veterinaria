@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../config/theme/app_theme.dart';
+import '../../../../config/theme/app_theme.dart';
 import '../bloc/treatments_bloc.dart';
 import '../bloc/treatments_event.dart';
 import '../bloc/treatments_state.dart';
@@ -68,7 +68,7 @@ class _TreatmentsListPageState extends State<TreatmentsListPage> {
                             Icon(
                               Icons.history_edu_outlined,
                               size: 64,
-                              color: AppTheme.textMuted.withOpacity(0.3),
+                              color: AppTheme.textMuted.withValues(alpha: 0.3),
                             ),
                             const SizedBox(height: 16),
                             const Text(
@@ -117,8 +117,8 @@ class _TreatmentsListPageState extends State<TreatmentsListPage> {
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                         decoration: BoxDecoration(
                                           color: isCompleted
-                                              ? AppTheme.alertGreen.withOpacity(0.15)
-                                              : AppTheme.primaryMint.withOpacity(0.15),
+                                              ? AppTheme.alertGreen.withValues(alpha: 0.15)
+                                              : AppTheme.primaryMint.withValues(alpha: 0.15),
                                           borderRadius: BorderRadius.circular(12),
                                         ),
                                         child: Text(
@@ -190,7 +190,7 @@ class _TreatmentsListPageState extends State<TreatmentsListPage> {
           _fetchTreatments();
         }
       },
-      selectedColor: AppTheme.primaryMint.withOpacity(0.2),
+      selectedColor: AppTheme.primaryMint.withValues(alpha: 0.2),
       disabledColor: Colors.transparent,
       side: BorderSide(
         color: isSelected ? AppTheme.primaryMint : AppTheme.darkMetallic,

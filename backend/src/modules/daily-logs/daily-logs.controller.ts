@@ -1,5 +1,5 @@
 import {
-  Controller, Get, Post,
+  Controller, Get, Post, Patch,
   Body, Param, Query, UseGuards, Request,
 } from '@nestjs/common';
 import { DailyLogsService } from './daily-logs.service';
@@ -19,12 +19,12 @@ export class DailyLogsController {
   ) {}
 
   @Post()
-  @Roles(Role.OWNER)
+  @Roles(Role.OWNER, Role.VET, Role.CLINIC_ADMIN)
   async create(
-    @Request() req: { user: { userId: string } },
+    @Request() req: { user: { userId: string; role: string } },
     @Body() dto: CreateDailyLogDto,
   ) {
-    const result = await this.dailyLogsService.create(req.user.userId, dto);
+    const result = await this.dailyLogsService.create(req.user.userId, req.user.role, dto);
 
     // Audit log creation
     this.auditService.logAsync({
@@ -32,7 +32,7 @@ export class DailyLogsController {
       userId: req.user.userId,
       resourceType: 'dailyLog',
       resourceId: result.id,
-      details: { treatmentId: dto.treatmentId, medicineTaken: dto.medicineTaken },
+      details: { treatmentId: dto.treatmentId, medicineTaken: dto.medicineTaken, logType: result.logType },
     });
 
     // Alert if alarm signs present
@@ -63,5 +63,31 @@ export class DailyLogsController {
       page ? parseInt(page, 10) : 1,
       limit ? parseInt(limit, 10) : 20,
     );
+  }
+
+  @Patch(':id')
+  async update(
+    @Param('id') id: string,
+    @Request() req: { user: { userId: string; role: string } },
+    @Body() dto: CreateDailyLogDto,
+  ) {
+    const result = await this.dailyLogsService.update(id, req.user.userId, req.user.role, dto);
+    this.auditService.logAsync({
+      action: AuditAction.DAILY_LOG_UPDATED,
+      userId: req.user.userId,
+      resourceType: 'dailyLog',
+      resourceId: id,
+      details: { treatmentId: dto.treatmentId },
+    });
+    return result;
+  }
+
+  @Patch(':id/vet-notes')
+  @Roles(Role.VET, Role.CLINIC_ADMIN)
+  async updateVetNotes(
+    @Param('id') id: string,
+    @Body('vetNotes') vetNotes: string,
+  ) {
+    return this.dailyLogsService.updateVetNotes(id, vetNotes);
   }
 }

@@ -42,6 +42,18 @@ export class TreatmentsController {
     return this.treatmentsService.getDashboard(req.user.userId);
   }
 
+  @Get('history')
+  @Roles(Role.VET, Role.CLINIC_ADMIN)
+  async getHistory(
+    @Request() req: { user: { userId: string } },
+    @Query('q') q?: string,
+    @Query('status') status?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.treatmentsService.getHistory(req.user.userId, { q, status, page, limit });
+  }
+
   @Get('by-vet')
   @Roles(Role.VET)
   async findAllByVet(
@@ -55,8 +67,9 @@ export class TreatmentsController {
   async findAllByPet(
     @Param('petId') petId: string,
     @Request() req: { user: { userId: string; role: string } },
+    @Query('status') status?: string,
   ) {
-    return this.treatmentsService.findAllByPet(petId, req.user.userId, req.user.role);
+    return this.treatmentsService.findAllByPet(petId, req.user.userId, req.user.role, status);
   }
 
   @Get(':id')

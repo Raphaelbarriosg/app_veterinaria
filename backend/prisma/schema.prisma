@@ -1,6 +1,7 @@
 // ============================================
 // Prisma Schema — VetCare SaaS Multi-Tenant
 // Supabase + PostgreSQL (Auth propio con JWT)
+// Última actualización: 2026-07-18 (Post-Op Module Refactor)
 // ============================================
 
 generator client {
@@ -33,6 +34,21 @@ enum TreatmentStatus {
   PAUSED
 }
 
+/// Tipo de procedimiento — define el protocolo post-op y los signos de alarma a vigilar
+enum ProcedureType {
+  CASTRATION_MALE        // Orquiectomía
+  OVARIOHYSTERECTOMY     // Ovariohisterectomía (OVH)
+  ORTHOPEDIC_FRACTURE    // Cirugía ortopédica / fractura
+  TUMOR_RESECTION        // Resección de tumor / masa
+  DENTAL                 // Profilaxis dental / extracción
+  GASTROENTEROLOGY       // Cirugía digestiva / cuerpo extraño
+  OPHTHALMOLOGY          // Cirugía ocular
+  DERMATOLOGY            // Cirugía de piel / heridas
+  GENERAL_SURGERY        // Cirugía general
+  MEDICAL_TREATMENT      // Tratamiento médico (sin cirugía)
+  OTHER
+}
+
 enum PetSpecies {
   DOG
   CAT
@@ -61,6 +77,40 @@ enum ClinicStatus {
   ACTIVE
   SUSPENDED
   TRIAL
+}
+
+/// Tipo de registro de evolución: domiciliario (dueño) o clínico (veterinario en consulta)
+enum DailyLogType {
+  OWNER    // Registrado por el dueño desde casa
+  CLINICAL // Registrado por el veterinario en consulta
+  TECH     // Registrado por un auxiliar técnico
+}
+
+/// Estado de cada evento de medicación individual
+enum MedicationLogStatus {
+  PENDING  // Aún no ha llegado la hora
+  GIVEN    // Medicamento administrado correctamente
+  SKIPPED  // Dosis omitida (con razón)
+  LATE     // Administrado fuera de la ventana horaria (> 2h de retraso)
+}
+
+/// Tipo de visita de control post-operatoria
+enum ControlVisitType {
+  HOURS_48        // Control a las 48 horas post-cirugía
+  STITCH_REMOVAL  // Retiro de puntos (día 7–10)
+  BANDAGE_CHANGE  // Cambio de vendaje
+  ULTRASOUND      // Ecografía de seguimiento
+  BLOOD_TEST      // Análisis de sangre de control
+  GENERAL_CONTROL // Control general
+  FINAL_DISCHARGE // Alta médica definitiva
+  OTHER
+}
+
+enum ControlVisitStatus {
+  SCHEDULED   // Programada
+  COMPLETED   // Realizada
+  CANCELLED   // Cancelada
+  RESCHEDULED // Reprogramada
 }
 
 // ============================================
@@ -188,10 +238,16 @@ model User {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
-  memberships   ClinicMember[]
-  ownedPets     Pet[]        @relation("OwnerPets")
-  vetTreatments Treatment[]  @relation("VetTreatments")
-  refreshTokens RefreshToken[]
+  memberships      ClinicMember[]
+  ownedPets        Pet[]            @relation("OwnerPets")
+  vetTreatments    Treatment[]      @relation("VetTreatments")
+  refreshTokens    RefreshToken[]
+  clinicalLogs     DailyLog[]       @relation("LogRegisteredBy")
+  medicationLogs   MedicationLog[]  @relation("MedicationRegisteredBy")
+  controlVisits    ControlVisit[]   @relation("ControlVisitVet")
+  postOpProtocols  PostOpProtocol[] @relation("ProtocolCreatedBy")
+  dischargeSheets  DischargeSheet[] @relation("DischargeCreatedBy")
+  deviceTokens     DeviceToken[]
 
   @@index([email])
   @@index([role])
@@ -236,51 +292,61 @@ model Pet {
 // ============================================
 
 model Treatment {
-  id        String          @id @default(uuid()) @db.Uuid
-  clinicId  String          @map("clinic_id") @db.Uuid
-  vetId     String          @map("vet_id") @db.Uuid
-  petId     String          @map("pet_id") @db.Uuid
-  diagnosis String          @db.Text
-  notes     String?         @db.Text
-  startDate DateTime        @map("start_date")
-  endDate   DateTime?       @map("end_date")
-  status    TreatmentStatus @default(ACTIVE)
-  priority  Int             @default(1) @db.SmallInt
-  createdAt DateTime        @default(now()) @map("created_at")
-  updatedAt DateTime        @updatedAt @map("updated_at")
+  id            String          @id @default(uuid()) @db.Uuid
+  clinicId      String          @map("clinic_id") @db.Uuid
+  vetId         String          @map("vet_id") @db.Uuid
+  petId         String          @map("pet_id") @db.Uuid
+  diagnosis     String          @db.Text
+  notes         String?         @db.Text
+  /// Tipo de procedimiento — define el protocolo y los signos a vigilar
+  procedureType ProcedureType   @default(OTHER) @map("procedure_type")
+  startDate     DateTime        @map("start_date")
+  endDate       DateTime?       @map("end_date")
+  status        TreatmentStatus @default(ACTIVE)
+  priority      Int             @default(1) @db.SmallInt
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
 
-  clinic    Clinic          @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  vet       User            @relation("VetTreatments", fields: [vetId], references: [id], onDelete: Cascade)
-  pet       Pet             @relation(fields: [petId], references: [id], onDelete: Cascade)
-  rules     TreatmentRule[]
-  dailyLogs DailyLog[]
+  clinic         Clinic           @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  vet            User             @relation("VetTreatments", fields: [vetId], references: [id], onDelete: Cascade)
+  pet            Pet              @relation(fields: [petId], references: [id], onDelete: Cascade)
+  rules          TreatmentRule[]
+  dailyLogs      DailyLog[]
+  medicationLogs MedicationLog[]
+  controlVisits  ControlVisit[]
+  postOpProtocol PostOpProtocol?
+  dischargeSheet DischargeSheet?
 
   @@index([clinicId])
   @@index([petId])
   @@index([vetId])
   @@index([status])
+  @@index([procedureType])
   @@index([startDate])
   @@map("treatments")
 }
 
 // ============================================
-// REGLAS DE TRATAMIENTO
+// REGLAS DE TRATAMIENTO (medicamentos prescritos)
 // ============================================
 
 model TreatmentRule {
   id             String    @id @default(uuid()) @db.Uuid
   treatmentId    String    @map("treatment_id") @db.Uuid
-  medicineName   String   @map("medicine_name") @db.VarChar(200)
-  dosage         String   @db.VarChar(100)
-  frequencyHours Int      @map("frequency_hours")
-  requirePhoto   Boolean  @default(false) @map("require_photo")
-  notes          String?  @db.Text
-  startTime      DateTime? @map("start_time")
-  isActive       Boolean  @default(true) @map("is_active")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  medicineName   String    @map("medicine_name") @db.VarChar(200)
+  dosage         String    @db.VarChar(100)
+  frequencyHours Int       @map("frequency_hours")
+  requirePhoto   Boolean   @default(false) @map("require_photo")
+  notes          String?   @db.Text
+  startTime      DateTime? @map("start_time")  // Primera toma del día
+  /// Fecha en que se dejó de usar esta regla (null = vigente)
+  endDate        DateTime? @map("end_date")
+  isActive       Boolean   @default(true) @map("is_active")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
-  treatment Treatment @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
+  treatment      Treatment       @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
+  medicationLogs MedicationLog[]
 
   @@index([treatmentId])
   @@index([isActive])
@@ -288,31 +354,186 @@ model TreatmentRule {
 }
 
 // ============================================
-// LOGS DIARIOS
+// LOGS DIARIOS DE EVOLUCIÓN GENERAL
+// (observaciones del estado del paciente — no medicación)
 // ============================================
 
 model DailyLog {
-  id             String    @id @default(uuid()) @db.Uuid
-  treatmentId    String    @map("treatment_id") @db.Uuid
-  registeredAt   DateTime  @default(now()) @map("registered_at")
-  medicineTaken  Boolean   @default(false) @map("medicine_taken")
-  appetiteLevel  Int       @map("appetite_level") @db.SmallInt
-  energyLevel    Int       @map("energy_level") @db.SmallInt
-  painLevel      Int?      @map("pain_level") @db.SmallInt
-  temperature    Decimal?  @db.Decimal(4, 1)
-  alarmSigns     String?   @map("alarm_signs") @db.Text
-  observations   String?   @db.Text
-  imageUrl       String?   @map("image_url")
-  vetNotes       String?   @map("vet_notes") @db.Text
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
+  id             String       @id @default(uuid()) @db.Uuid
+  treatmentId    String       @map("treatment_id") @db.Uuid
+  /// Quién registró: OWNER desde casa, CLINICAL por vet en consulta, TECH por auxiliar
+  logType        DailyLogType @default(OWNER) @map("log_type")
+  /// Usuario que creó el log (puede ser el dueño o el veterinario)
+  registeredById String       @map("registered_by_id") @db.Uuid
+  registeredAt   DateTime     @default(now()) @map("registered_at")
+  /// Ahora nullable: para logs de tipo CLINICAL puede no aplicar
+  medicineTaken  Boolean?     @default(false) @map("medicine_taken")
+  appetiteLevel  Int          @map("appetite_level") @db.SmallInt
+  energyLevel    Int          @map("energy_level") @db.SmallInt
+  painLevel      Int?         @map("pain_level") @db.SmallInt
+  temperature    Decimal?     @db.Decimal(4, 1)
+  alarmSigns     String?      @map("alarm_signs") @db.Text
+  observations   String?      @db.Text
+  imageUrl       String?      @map("image_url")
+  vetNotes       String?      @map("vet_notes") @db.Text
+  /// Historial de ediciones: JSON array de { editedAt, editedBy, previousValues }
+  editHistory    Json?        @map("edit_history")
+  editedAt       DateTime?    @map("edited_at")
+  editedById     String?      @map("edited_by_id") @db.Uuid
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
 
-  treatment Treatment @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
+  treatment    Treatment @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
+  registeredBy User      @relation("LogRegisteredBy", fields: [registeredById], references: [id])
 
   @@index([treatmentId, registeredAt])
   @@index([registeredAt])
+  @@index([logType])
   @@index([medicineTaken])
   @@map("daily_logs")
+}
+
+// ============================================
+// REGISTRO DE MEDICACIÓN POR DOSIS INDIVIDUAL
+// Cada evento de administración de un medicamento específico
+// ============================================
+
+model MedicationLog {
+  id             String              @id @default(uuid()) @db.Uuid
+  treatmentId    String              @map("treatment_id") @db.Uuid
+  ruleId         String              @map("rule_id") @db.Uuid
+  registeredById String              @map("registered_by_id") @db.Uuid
+  /// Cuándo DEBÍA administrarse (calculado desde la regla)
+  scheduledAt    DateTime            @map("scheduled_at")
+  /// Cuándo SE ADMINISTRÓ realmente (null = no administrada aún)
+  givenAt        DateTime?           @map("given_at")
+  status         MedicationLogStatus @default(PENDING)
+  /// Razón por la que se omitió o retrasó (requerida si status=SKIPPED)
+  skippedReason  String?             @map("skipped_reason") @db.Text
+  /// Foto de la administración (si la regla lo requiere)
+  photoUrl       String?             @map("photo_url")
+  notes          String?             @db.Text
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+
+  treatment    Treatment     @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
+  rule         TreatmentRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  registeredBy User          @relation("MedicationRegisteredBy", fields: [registeredById], references: [id])
+
+  @@index([treatmentId, scheduledAt])
+  @@index([ruleId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@map("medication_logs")
+}
+
+// ============================================
+// VISITAS DE CONTROL POST-OP
+// Citas programadas de seguimiento
+// ============================================
+
+model ControlVisit {
+  id          String             @id @default(uuid()) @db.Uuid
+  treatmentId String             @map("treatment_id") @db.Uuid
+  vetId       String?            @map("vet_id") @db.Uuid
+  type        ControlVisitType
+  status      ControlVisitStatus @default(SCHEDULED)
+  scheduledAt DateTime           @map("scheduled_at")
+  completedAt DateTime?          @map("completed_at")
+  notes       String?            @db.Text
+  /// Notas de la consulta (solo visibles al completar)
+  clinicalFindings String?       @map("clinical_findings") @db.Text
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  treatment Treatment @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
+  vet       User?     @relation("ControlVisitVet", fields: [vetId], references: [id])
+
+  @@index([treatmentId])
+  @@index([scheduledAt])
+  @@index([status])
+  @@map("control_visits")
+}
+
+// ============================================
+// PROTOCOLO POST-OP
+// Plantilla de signos de alarma y cuidados por tipo de cirugía
+// ============================================
+
+model PostOpProtocol {
+  id            String        @id @default(uuid()) @db.Uuid
+  treatmentId   String        @unique @map("treatment_id") @db.Uuid
+  createdById   String        @map("created_by_id") @db.Uuid
+  procedureType ProcedureType @map("procedure_type")
+  /// JSON: Array de { sign: string, severity: 'CRITICAL'|'HIGH'|'MEDIUM', description: string }
+  alarmSigns    Json          @map("alarm_signs")
+  /// JSON: Array de string (restricciones: "No bañar por 10 días", "Mantener collar isabelino", etc.)
+  restrictions  Json
+  /// JSON: Array de string (cuidados especiales)
+  specialCare   Json          @map("special_care")
+  /// Cuándo llamar urgente a la clínica (texto libre del vet)
+  emergencyCall String?       @map("emergency_call") @db.Text
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  treatment   Treatment @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
+  createdBy   User      @relation("ProtocolCreatedBy", fields: [createdById], references: [id])
+
+  @@index([treatmentId])
+  @@index([procedureType])
+  @@map("post_op_protocols")
+}
+
+// ============================================
+// HOJA DE ALTA MÉDICA
+// Instrucciones de alta generadas por el veterinario
+// ============================================
+
+model DischargeSheet {
+  id           String   @id @default(uuid()) @db.Uuid
+  treatmentId  String   @unique @map("treatment_id") @db.Uuid
+  createdById  String   @map("created_by_id") @db.Uuid
+  /// Resumen del procedimiento / diagnóstico final
+  summary      String   @db.Text
+  /// Próximos pasos y citas recomendadas
+  nextSteps    String?  @map("next_steps") @db.Text
+  /// Señales de alarma para volver urgente
+  returnSigns  String?  @map("return_signs") @db.Text
+  /// Restricciones (no bañar, no correr, collar isabelino, etc.)
+  restrictions String?  @db.Text
+  /// JSON: Lista de medicamentos con horario exacto [{ name, dosage, schedule, duration }]
+  medications  Json?
+  /// Indicaciones de alimentación
+  feedingNotes String?  @map("feeding_notes") @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  treatment   Treatment @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
+  createdBy   User      @relation("DischargeCreatedBy", fields: [createdById], references: [id])
+
+  @@index([treatmentId])
+  @@map("discharge_sheets")
+}
+
+// ============================================
+// DEVICE TOKEN — Notificaciones Push (Firebase FCM)
+// ============================================
+
+model DeviceToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  token     String   @unique @db.VarChar(500)
+  platform  String   @db.VarChar(10)  // 'android' | 'ios' | 'web'
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([isActive])
+  @@map("device_tokens")
 }
 
 // ============================================
@@ -327,10 +548,8 @@ model RefreshToken {
   isRevoked Boolean  @default(false) @map("is_revoked")
   createdAt DateTime @default(now()) @map("created_at")
 
-  // Relations
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Indexes
   @@index([userId])
   @@index([token])
   @@index([expiresAt])

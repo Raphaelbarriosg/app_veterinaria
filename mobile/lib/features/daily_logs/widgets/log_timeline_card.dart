@@ -18,11 +18,11 @@ class LogTimelineCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      color: AppTheme.surfaceSlate.withOpacity(0.4),
+      color: AppTheme.surfaceSlate.withValues(alpha: 0.4),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: hasAlarm ? AppTheme.alertRed.withOpacity(0.5) : AppTheme.darkMetallic,
+          color: hasAlarm ? AppTheme.alertRed.withValues(alpha: 0.5) : AppTheme.darkMetallic,
           width: 1.5,
         ),
       ),
@@ -45,8 +45,8 @@ class LogTimelineCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: log.medicineTaken
-                        ? AppTheme.alertGreen.withOpacity(0.15)
-                        : AppTheme.alertRed.withOpacity(0.15),
+                        ? AppTheme.alertGreen.withValues(alpha: 0.15)
+                        : AppTheme.alertRed.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -80,9 +80,13 @@ class LogTimelineCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildIndicatorBar('Apetito', log.appetiteLevel),
+                      _buildIndicatorBar('Apetito', log.appetiteLevel, max: 5),
                       const SizedBox(height: 12),
-                      _buildIndicatorBar('Energía', log.energyLevel),
+                      _buildIndicatorBar('Energía', log.energyLevel, max: 5),
+                      if (log.painLevel != null) ...[
+                        const SizedBox(height: 12),
+                        _buildIndicatorBar('Dolor', log.painLevel!, max: 10, isPain: true),
+                      ],
                     ],
                   ),
                 ),
@@ -108,15 +112,64 @@ class LogTimelineCard extends StatelessWidget {
               ],
             ),
 
+            // Temperatura
+            if (log.temperature != null) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Icon(Icons.thermostat_outlined, size: 16, color: AppTheme.textMuted),
+                  const SizedBox(width: 6),
+                  const Text(
+                    'Temperatura: ',
+                    style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                  ),
+                  Text(
+                    '${log.temperature!.toStringAsFixed(1)}°C',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: log.temperature! >= 37.5 && log.temperature! <= 39.5
+                          ? AppTheme.alertGreen : AppTheme.alertYellow,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+
+            // Observaciones
+            if (log.observations != null && log.observations!.trim().isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.darkMetallic.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.notes_rounded, size: 16, color: AppTheme.textMuted),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        log.observations!,
+                        style: const TextStyle(color: AppTheme.textLight, fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             // Signos de Alarma
             if (hasAlarm) ...[
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppTheme.alertRed.withOpacity(0.1),
+                  color: AppTheme.alertRed.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppTheme.alertRed.withOpacity(0.2), width: 1),
+                  border: Border.all(color: AppTheme.alertRed.withValues(alpha: 0.2), width: 1),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,7 +202,7 @@ class LogTimelineCard extends StatelessWidget {
     );
   }
 
-  Widget _buildIndicatorBar(String label, int value) {
+  Widget _buildIndicatorBar(String label, int value, {int max = 5, bool isPain = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -157,19 +210,28 @@ class LogTimelineCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(label, style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-            Text('$value/5', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textLight)),
+            Text('$value/$max', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textLight)),
           ],
         ),
         const SizedBox(height: 4),
         Row(
-          children: List.generate(5, (index) {
+          children: List.generate(max, (index) {
             final active = index < value;
+            Color barColor;
+            if (isPain) {
+              final ratio = value / max;
+              barColor = ratio <= 0.3 ? AppTheme.alertGreen :
+                         ratio <= 0.6 ? AppTheme.alertYellow :
+                         AppTheme.alertRed;
+            } else {
+              barColor = AppTheme.primaryMint;
+            }
             return Expanded(
               child: Container(
                 height: 6,
-                margin: EdgeInsets.only(right: index == 4 ? 0 : 4),
+                margin: EdgeInsets.only(right: index == max - 1 ? 0 : 4),
                 decoration: BoxDecoration(
-                  color: active ? AppTheme.primaryMint : AppTheme.darkMetallic,
+                  color: active ? barColor : AppTheme.darkMetallic,
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),

@@ -3,20 +3,37 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import {
+  LayoutDashboard,
+  PawPrint,
+  Building2,
+  LogOut,
+  Menu,
+  ShieldCheck,
+  Clock,
+} from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { useAuth } from '@/hooks/use-auth';
 import { translateRole } from '@/lib/utils';
 import { Spinner } from '@/components/ui/spinner';
 
 const navItemsVet = [
-  { href: '/vet', label: 'Dashboard', icon: '📊', exact: true },
-  { href: '/vet/pets', label: 'Pacientes', icon: '🐾' },
-  { href: '/clinics', label: 'Clínica', icon: '🏥' },
+  { href: '/vet', label: 'Dashboard', icon: LayoutDashboard, exact: true },
+  { href: '/vet/pets', label: 'Pacientes', icon: PawPrint },
+  { href: '/vet/history', label: 'Historial', icon: Clock },
+  { href: '/clinics', label: 'Clínica', icon: Building2 },
+];
+
+const navItemsAdmin = [
+  { href: '/clinic-admin', label: 'Dashboard Admin', icon: LayoutDashboard, exact: true },
+  { href: '/clinics', label: 'Mis Clínicas', icon: Building2 },
+  { href: '/vet/pets', label: 'Pacientes', icon: PawPrint },
+  { href: '/vet/history', label: 'Historial', icon: Clock },
 ];
 
 const navItemsOwner = [
-  { href: '/owner', label: 'Mis Mascotas', icon: '🐾', exact: true },
-  { href: '/clinics', label: 'Mi Clínica', icon: '🏥' },
+  { href: '/owner', label: 'Mis Mascotas', icon: PawPrint, exact: true },
+  { href: '/clinics', label: 'Mi Clínica', icon: Building2 },
 ];
 
 export default function DashboardLayout({
@@ -32,7 +49,11 @@ export default function DashboardLayout({
   const [loggingOut, setLoggingOut] = useState(false);
 
   const navItems =
-    user?.role === 'OWNER' ? navItemsOwner : navItemsVet;
+    user?.role === 'OWNER'
+      ? navItemsOwner
+      : user?.role === 'CLINIC_ADMIN' || user?.role === 'SUPER_ADMIN'
+      ? navItemsAdmin
+      : navItemsVet;
 
   // Redirect if not authenticated after loading
   useEffect(() => {
@@ -81,28 +102,30 @@ export default function DashboardLayout({
       <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
         {/* Logo */}
         <div className="sidebar-logo">
-          <div className="sidebar-logo-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-              <polyline points="9,22 9,12 15,12 15,22" />
-            </svg>
+          <div className="sidebar-logo-icon" style={{ background: 'var(--color-accent-dim)', color: 'var(--color-accent)', padding: '6px', borderRadius: '8px' }}>
+            <ShieldCheck className="w-5 h-5" />
           </div>
           <span className="sidebar-logo-text">VetCare</span>
         </div>
 
         {/* Nav */}
         <nav className="sidebar-nav">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setSidebarOpen(false)}
-              className={`sidebar-nav-item ${isActive(item.href, item.exact) ? 'active' : ''}`}
-            >
-              <span className="sidebar-nav-icon">{item.icon}</span>
-              <span>{item.label}</span>
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const IconComponent = item.icon;
+            const active = isActive(item.href, item.exact);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setSidebarOpen(false)}
+                className={`sidebar-nav-item ${active ? 'active' : ''}`}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+              >
+                <IconComponent className={`w-4 h-4 ${active ? 'text-teal-600 font-semibold' : 'text-slate-500'}`} />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
         </nav>
 
         {/* User info */}
@@ -123,13 +146,7 @@ export default function DashboardLayout({
             id="logout-btn"
             title="Cerrar sesión"
           >
-            {loggingOut ? <Spinner size="sm" /> : (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16,17 21,12 16,7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-            )}
+            {loggingOut ? <Spinner size="sm" /> : <LogOut className="w-4 h-4 text-slate-400 hover:text-rose-400 transition-colors" />}
           </button>
         </div>
       </aside>
@@ -143,11 +160,7 @@ export default function DashboardLayout({
             onClick={() => setSidebarOpen(!sidebarOpen)}
             id="sidebar-toggle"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
+            <Menu className="w-5 h-5 text-slate-200" />
           </button>
           <span className="dashboard-header-logo">VetCare</span>
           <div className="dashboard-header-avatar">

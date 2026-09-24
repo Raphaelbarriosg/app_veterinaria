@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../config/theme/app_theme.dart';
+import '../../../../config/theme/app_theme.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../bloc/treatments_bloc.dart';
@@ -128,8 +128,8 @@ class _TreatmentDetailPageState extends State<TreatmentDetailPage> {
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
                               color: isCompleted
-                                  ? AppTheme.alertGreen.withOpacity(0.15)
-                                  : AppTheme.primaryMint.withOpacity(0.15),
+                                  ? AppTheme.alertGreen.withValues(alpha: 0.15)
+                                  : AppTheme.primaryMint.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: isCompleted ? AppTheme.alertGreen : AppTheme.primaryMint,
@@ -160,7 +160,7 @@ class _TreatmentDetailPageState extends State<TreatmentDetailPage> {
                   ...t.rules.map((rule) {
                     return Card(
                       margin: const EdgeInsets.only(bottom: 12),
-                      color: AppTheme.darkMetallic.withOpacity(0.3),
+                      color: AppTheme.darkMetallic.withValues(alpha: 0.3),
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Row(

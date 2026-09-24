@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AuditService } from '../../common/services/audit.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
@@ -12,10 +13,21 @@ const mockPrismaService = {
     findUnique: jest.fn(),
     create: jest.fn(),
   },
+  refreshToken: {
+    create: jest.fn(),
+    findUnique: jest.fn(),
+    update: jest.fn(),
+    updateMany: jest.fn(),
+  },
 };
 
 const mockJwtService = {
   sign: jest.fn(),
+};
+
+const mockAuditService = {
+  logAction: jest.fn(),
+  logAsync: jest.fn(),
 };
 
 // Mock de bcrypt
@@ -37,6 +49,7 @@ describe('AuthService', () => {
         AuthService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: JwtService, useValue: mockJwtService },
+        { provide: AuditService, useValue: mockAuditService },
       ],
     }).compile();
 
@@ -70,6 +83,7 @@ describe('AuthService', () => {
       // Arrange
       mockPrismaService.user.findUnique.mockResolvedValue(null);
       mockPrismaService.user.create.mockResolvedValue(createdUser);
+      mockPrismaService.refreshToken.create.mockResolvedValue({ id: 'rt-1', token: 'refresh-token-123' });
       mockJwtService.sign.mockReturnValue('jwt-token-123');
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword123');
 
@@ -90,20 +104,15 @@ describe('AuthService', () => {
           role: registerDto.role,
         },
       });
-      expect(mockJwtService.sign).toHaveBeenCalledWith({
-        sub: createdUser.id,
+      expect(result.user).toEqual({
+        id: createdUser.id,
         email: createdUser.email,
+        name: createdUser.name,
+        phone: createdUser.phone,
         role: createdUser.role,
       });
-      expect(result).toEqual({
-        user: {
-          id: createdUser.id,
-          email: createdUser.email,
-          name: createdUser.name,
-          role: createdUser.role,
-        },
-        accessToken: 'jwt-token-123',
-      });
+      expect(result.accessToken).toBe('jwt-token-123');
+      expect(result.refreshToken).toBeDefined();
     });
 
     it('should throw ConflictException when email already exists', async () => {
@@ -135,11 +144,14 @@ describe('AuthService', () => {
       passwordHash: 'hashedPassword123',
       name: 'Test User',
       role: 'OWNER',
+      isActive: true,
     };
 
     it('should login successfully with valid credentials', async () => {
       // Arrange
       mockPrismaService.user.findUnique.mockResolvedValue(existingUser);
+      mockPrismaService.user.update = jest.fn().mockResolvedValue(existingUser);
+      mockPrismaService.refreshToken.create.mockResolvedValue({ id: 'rt-1', token: 'refresh-token-123' });
       mockJwtService.sign.mockReturnValue('jwt-token-123');
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
@@ -154,20 +166,14 @@ describe('AuthService', () => {
         loginDto.password,
         existingUser.passwordHash,
       );
-      expect(mockJwtService.sign).toHaveBeenCalledWith({
-        sub: existingUser.id,
+      expect(result.user).toEqual({
+        id: existingUser.id,
         email: existingUser.email,
+        name: existingUser.name,
         role: existingUser.role,
       });
-      expect(result).toEqual({
-        user: {
-          id: existingUser.id,
-          email: existingUser.email,
-          name: existingUser.name,
-          role: existingUser.role,
-        },
-        accessToken: 'jwt-token-123',
-      });
+      expect(result.accessToken).toBe('jwt-token-123');
+      expect(result.refreshToken).toBeDefined();
     });
 
     it('should throw UnauthorizedException when user does not exist', async () => {
@@ -198,24 +204,29 @@ describe('AuthService', () => {
     });
   });
 
-  describe('generateToken', () => {
-    it('should generate a JWT token', () => {
+  describe('generateTokenPair', () => {
+    it('should generate a pair of JWT tokens and save refresh token', async () => {
       // Arrange
       const userId = 'uuid-123';
       const email = 'test@example.com';
       const role = 'OWNER';
       mockJwtService.sign.mockReturnValue('jwt-token-123');
+      mockPrismaService.refreshToken.create.mockResolvedValue({ id: 'rt-1', token: 'refresh-token-123' });
 
-      // Act (llamando al método privado a través de la instancia)
-      const token = service['generateToken'](userId, email, role);
+      // Act
+      const tokens = await service['generateTokenPair'](userId, email, role);
 
       // Assert
-      expect(mockJwtService.sign).toHaveBeenCalledWith({
-        sub: userId,
-        email,
-        role,
-      });
-      expect(token).toBe('jwt-token-123');
+      expect(mockJwtService.sign).toHaveBeenCalledWith(
+        {
+          sub: userId,
+          email,
+          role,
+        },
+        { expiresIn: '15m' },
+      );
+      expect(tokens.accessToken).toBe('jwt-token-123');
+      expect(tokens.refreshToken).toBeDefined();
     });
   });
 });

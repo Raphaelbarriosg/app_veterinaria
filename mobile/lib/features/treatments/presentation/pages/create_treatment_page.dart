@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../config/theme/app_theme.dart';
+import '../../../../config/theme/app_theme.dart';
 import '../../../pets/data/models/pet_model.dart';
 import '../../../pets/presentation/bloc/pets_bloc.dart';
 import '../../../pets/presentation/bloc/pets_event.dart';
 import '../../../pets/presentation/bloc/pets_state.dart';
-import '../../widgets/auth_text_field.dart';
+import '../../../auth/widgets/auth_text_field.dart';
 import '../bloc/treatments_bloc.dart';
 import '../bloc/treatments_event.dart';
 import '../bloc/treatments_state.dart';
@@ -29,7 +29,7 @@ class _CreateTreatmentPageState extends State<CreateTreatmentPage> {
   bool _requirePhoto = false;
 
   PetModel? _selectedPet;
-  DateTime _startDate = DateTime.now();
+  final DateTime _startDate = DateTime.now();
   DateTime? _endDate;
 
   final List<Map<String, dynamic>> _rules = [];
@@ -239,7 +239,7 @@ class _CreateTreatmentPageState extends State<CreateTreatmentPage> {
                   ] else ...[
                     // Tarjeta Mascota Seleccionada
                     Card(
-                      color: AppTheme.primaryMint.withOpacity(0.05),
+                      color: AppTheme.primaryMint.withValues(alpha: 0.05),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                         side: const BorderSide(color: AppTheme.primaryMint, width: 1),
@@ -293,7 +293,7 @@ class _CreateTreatmentPageState extends State<CreateTreatmentPage> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
                       decoration: BoxDecoration(
-                        color: AppTheme.darkMetallic.withOpacity(0.25),
+                        color: AppTheme.darkMetallic.withValues(alpha: 0.25),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AppTheme.darkMetallic, width: 1),
                       ),
@@ -325,7 +325,7 @@ class _CreateTreatmentPageState extends State<CreateTreatmentPage> {
                   ),
                   const SizedBox(height: 12),
                   Card(
-                    color: AppTheme.surfaceSlate.withOpacity(0.5),
+                    color: AppTheme.surfaceSlate.withValues(alpha: 0.5),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
@@ -386,7 +386,7 @@ class _CreateTreatmentPageState extends State<CreateTreatmentPage> {
                               const Spacer(),
                               Switch(
                                 value: _requirePhoto,
-                                activeColor: AppTheme.primaryMint,
+                                activeThumbColor: AppTheme.primaryMint,
                                 onChanged: (val) {
                                   setState(() {
                                     _requirePhoto = val;
