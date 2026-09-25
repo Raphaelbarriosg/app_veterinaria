@@ -5,10 +5,12 @@ services:
     plan: free
     region: ohio
     rootDir: backend
-    buildCommand: npm install && npx prisma generate && npm run build
+    buildCommand: npm install --include=dev && npx prisma generate && npm run build
     startCommand: node dist/main.js
     healthCheckPath: /api/v1/health
     envVars:
+      - key: NODE_VERSION
+        value: 20
       - key: NODE_ENV
         value: production
       - key: PORT

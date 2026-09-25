@@ -54,7 +54,7 @@ Render es ideal para NestJS porque mantiene el servidor en ejecución continua, 
 | **Branch** | `main` |
 | **Root Directory** | `backend` |
 | **Runtime** | `Node` |
-| **Build Command** | `npm install && npx prisma generate && npm run build` |
+| **Build Command** | `npm install --include=dev && npx prisma generate && npm run build` |
 | **Start Command** | `node dist/main.js` |
 | **Instance Type** | `Free` |
 
@@ -62,6 +62,7 @@ Render es ideal para NestJS porque mantiene el servidor en ejecución continua, 
 
 | Clave | Valor |
 |---|---|
+| `NODE_VERSION` | `20` |
 | `NODE_ENV` | `production` |
 | `PORT` | `10000` |
 | `DATABASE_URL` | *(Tu URL de Supabase Pooler del archivo backend/.env)* |
