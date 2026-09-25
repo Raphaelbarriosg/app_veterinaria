@@ -1,21 +1,35 @@
 # Estado del Proyecto — VetCare SaaS Multi-Tenant
 
-> Última actualización: 18 de julio de 2026
+> Última actualización: 24 de septiembre de 2026
 
-Este documento centraliza el avance actual, la arquitectura técnica y el estado real del sistema.
+Este documento centraliza el avance actual, la arquitectura técnica y el estado real del ecosistema VetCare.
+
+---
+
+## 🌐 Despliegue en Producción (Cloud Live ✅)
+
+| Componente | Plataforma | URL / Recurso | Estado |
+|---|---|---|---|
+| **Frontend Web** | **Vercel** | [appveterinaria-five.vercel.app](https://appveterinaria-five.vercel.app/) | 🟢 **Operativo (Next.js 16 + React 19)** |
+| **Backend API** | **Render** | [vetcare-backend-vxua.onrender.com](https://vetcare-backend-vxua.onrender.com) | 🟢 **Operativo (Node 22 + NestJS 11)** |
+| **Health Check** | Render API | [/api/v1/health](https://vetcare-backend-vxua.onrender.com/api/v1/health) | 🟢 `{"status":"ok","environment":"production"}` |
+| **API Docs (Swagger)** | Render Docs | [/api/docs](https://vetcare-backend-vxua.onrender.com/api/docs) | 🟢 **Swagger UI 11.x Activo** |
+| **Base de Datos** | **Supabase** | `aws-1-us-east-2.pooler.supabase.com:6543` | 🟢 **PostgreSQL 17+ (Pooler + Direct)** |
+| **Storage de Fotos** | **Supabase** | Bucket `vet-app-images` | 🟢 **Almacenamiento público activo** |
+| **App Móvil (Android APK)** | **GitHub Actions** | [Artifact Run #36084637959](https://github.com/Raphaelbarriosg/app_veterinaria/actions/runs/36084637959) | 🟢 **APK Compilado (~32.6 MB)** |
 
 ---
 
 ## 🏗️ Arquitectura del Sistema
 
-1. **Backend**: API REST en **NestJS v11** + **TypeScript** + **Prisma ORM 6**
-2. **Base de Datos**: **Supabase** (PostgreSQL 17+) con conexión pooler + directa
-3. **Auth**: Propio con **JWT + Refresh Token** (rotación segura, 15min access / 7d refresh)
-4. **Multi-Tenant**: Modelo `Clinic` con miembros, invitaciones, suscripciones y planes
-5. **Frontend Web**: **React 19 + Next.js 16** (Turbopack) — Build exitoso (19 rutas) ✅
-6. **Frontend Móvil**: App **Flutter** con arquitectura BLoC — 3 roles cubiertos ✅
-7. **Almacenamiento**: **Supabase Storage** (bucket `vet-uploads`) para fotos de evolución
-8. **CI/CD**: **GitHub Actions** con pipelines para backend y frontend
+1. **Backend**: API REST en **NestJS v11** + **TypeScript** + **Prisma ORM 6** (Desplegado en Render con Node 22).
+2. **Base de Datos**: **Supabase** (PostgreSQL 17+) con conexión pooler (puerto 6543) + conexión directa para migraciones.
+3. **Auth**: Propio con **JWT + Refresh Token** (rotación segura, 15min access / 7d refresh) con cookies httpOnly en Web y SecureStorage en Móvil.
+4. **Multi-Tenant**: Modelo `Clinic` con miembros, invitaciones por token, roles de clínica (`CLINIC_ADMIN`, `VET`, `STAFF`) y suscripciones.
+5. **Frontend Web**: **React 19 + Next.js 16** (Turbopack) desplegado en Vercel con BFF Proxy (`/api/v1/[...path]`).
+6. **Frontend Móvil**: App **Flutter 3.x** con arquitectura BLoC, 3 roles y conectada por defecto a la nube.
+7. **Almacenamiento**: **Supabase Storage** (bucket `vet-app-images`) para fotos de evolución post-operatoria.
+8. **CI/CD**: **GitHub Actions** con pipeline para Backend, Frontend Web y compilación automatizada de APK Android.
 
 ---
 
@@ -39,17 +53,22 @@ Este documento centraliza el avance actual, la arquitectura técnica y el estado
 | **Mobile** | Flutter + BLoC | 3.x |
 | **HTTP (Mobile)** | Dio + QueuedInterceptorsWrapper | 5.x |
 | **Storage (Mobile)** | flutter_secure_storage | 9.x |
+| **Hosting Cloud** | Render (Backend) + Vercel (Web) | Cloud |
+| **CI/CD** | GitHub Actions (CI + APK Builder) | Cloud |
 
 ---
 
 ## ✅ Builds y Tests Verificados
 
-| Proyecto | Comando | Resultado | Fecha |
-|----------|---------|----------| ------|
-| Backend | `npx nest build` | ✅ Sin errores | 22-sep-2026 |
-| Backend Tests | `npm test` | ✅ 11 tests unitarios Jest pasados | 22-sep-2026 |
-| Frontend | `npx next build` | ✅ Sin errores (19 rutas) | 22-sep-2026 |
-| Frontend E2E | `npx playwright test` | ✅ 14 tests E2E Playwright pasados | 22-sep-2026 |
+| Proyecto | Comando / Entorno | Resultado | Fecha |
+|----------|-------------------|-----------|-------|
+| Backend Local | `npm run build` | ✅ Sin errores | 24-sep-2026 |
+| Backend Tests | `npm test` | ✅ 11 tests unitarios Jest pasados | 24-sep-2026 |
+| Frontend Local | `npm run build` | ✅ Sin errores (19 rutas Turbopack) | 24-sep-2026 |
+| Frontend E2E | `npx playwright test` | ✅ 14 tests E2E Playwright pasados | 24-sep-2026 |
+| Backend Cloud | Render Deployment | ✅ `Live` (Node 22 + Health OK) | 24-sep-2026 |
+| Frontend Cloud | Vercel Deployment | ✅ `Live` (BFF Proxy conectado) | 24-sep-2026 |
+| Mobile APK Cloud | GitHub Actions Run #36084637959 | ✅ `Success` (APK 32.6 MB generado) | 24-sep-2026 |
 
 ---
 
@@ -183,24 +202,28 @@ stores/                           ✅ auth-store (Zustand)
 ### Rutas de navegación (11 rutas)
 `/login`, `/register`, `/owner-home`, `/vet-home`, `/clinic-admin-home` ⭐, `/pet-detail`, `/pet-form`, `/create-treatment`, `/treatment-detail`, `/daily-log-form`, `/daily-logs-history`
 
-### API Client
-- ✅ `QueuedInterceptorsWrapper` para refresh token transparente
-- ✅ Revocación automática en error de refresh
-- ✅ URL base configurable por entorno con `--dart-define` ⭐
-- ✅ Upload de fotos a Supabase Storage vía backend (POST multipart a `/upload/image`) ⭐
+### API Client y Resiliencia Cloud
+- ✅ Conectado por defecto al Backend en Render (`https://vetcare-backend-vxua.onrender.com/api/v1`)
+- ✅ `QueuedInterceptorsWrapper` para refresh token transparente y seguro
+- ✅ Timeouts de conexión aumentados a 30 segundos (tolerancia a cold-starts en la nube)
+- ✅ Revocación automática y borrado seguro en error de refresh
+- ✅ URL base configurable por entorno con `--dart-define`
+- ✅ Upload de fotos a Supabase Storage vía backend (POST multipart a `/upload/image`)
+- ✅ `PushNotificationService` vinculado al ciclo de vida de `AuthBloc` (registro automático de token en login/register y revocación en logout)
 
-### Variables de Entorno
+### Variables de Entorno y Ejecución
 ```bash
-# Emulador Android
-flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1
+# Conexión directa a la nube (por defecto):
+flutter run
 
-# Dispositivo físico
-flutter run --dart-define=API_BASE_URL=http://192.168.1.X:3000/api/v1
+# Compilación de APK de producción conectado a la nube:
+flutter build apk --release
 
-# Producción
-flutter build apk --dart-define=API_BASE_URL=https://api.tudominio.com/api/v1
+# O especificando manualmente la URL:
+flutter run --dart-define=API_BASE_URL=https://vetcare-backend-vxua.onrender.com/api/v1
 ```
 > Ver `mobile/.env.example` para referencia completa.
+> **Descarga directa del APK generado en la nube**: [GitHub Actions Run #36084637959](https://github.com/Raphaelbarriosg/app_veterinaria/actions/runs/36084637959) (Artifact `vetcare-app-release`).
 
 ---
 
@@ -285,9 +308,15 @@ flutter run --dart-define=API_BASE_URL=http://192.168.16.107:3000/api/v1
   - **Backend**: `https://vetcare-backend-vxua.onrender.com` (Render - Node 22 + NestJS + Supabase)
   - **Frontend Web**: `https://appveterinaria-five.vercel.app` (Vercel - Next.js 16 + React 19)
   - **Base de Datos & Storage**: Supabase Cloud (PostgreSQL 17 + Bucket `vet-app-images`)
-  - **Flujo de Autenticación E2E y Semáforo Clínico**: Verificado en vivo en la nube.
+  - **Flujo de Autenticación E2E y Semáforo Clínico**: Verificado en vivo en la nube mediante navegador automatizado.
+- [x] **Compilación Automatizada de la App Móvil en la Nube** 📱:
+  - Pipeline de GitHub Actions con Java 17 + Flutter estable para generar el release APK sin consumir recursos locales.
+  - Artefacto generado y listo para instalar: `vetcare-app-release` (~32.6 MB) en [GitHub Actions Run #36084637959](https://github.com/Raphaelbarriosg/app_veterinaria/actions/runs/36084637959).
+  - App móvil pre-configurada para apuntar al backend en la nube con timeouts de 30 segundos.
+  - `PushNotificationService` conectado al ciclo de autenticación en `AuthBloc`.
 
-### Pendiente
-- [ ] **Notificaciones push en Flutter** — alertas de tratamientos activos
-- [ ] **Pasarela de pagos** — integración real (actualmente solo modelo de datos)
+### Próximos Pasos Sugeridos
+- [ ] **Credenciales de Firebase Cloud Messaging (FCM)** — configuración de `google-services.json` para entrega de notificaciones push en producción (actualmente opera en modo Dry-Run en backend).
+- [ ] **Paridad de Hojas de Alta y Visitas de Control en Móvil** — vistas dedicadas para que el dueño consulte su hoja de alta y confirme citas de control desde el celular.
+- [ ] **Pasarela de Pagos SaaS** — integración de Stripe / MercadoPago para cobro de suscripciones de clínicas.
 
