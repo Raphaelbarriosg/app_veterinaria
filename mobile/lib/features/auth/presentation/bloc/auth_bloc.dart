@@ -1,10 +1,12 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/services/push_notification_service.dart';
 import '../../data/repositories/auth_repository.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _authRepository;
+  final PushNotificationService _pushService = PushNotificationService();
 
   AuthBloc(this._authRepository) : super(AuthInitial()) {
     on<CheckAuthStatus>(_onCheckAuthStatus);
@@ -19,6 +21,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final hasSession = await _authRepository.hasActiveSession();
       if (hasSession) {
         final user = await _authRepository.getProfile();
+        // Registrar token si ya tiene sesión activa
+        _pushService.registerWithBackend().ignore();
         emit(Authenticated(user));
       } else {
         emit(Unauthenticated());
@@ -37,6 +41,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         email: event.email,
         password: event.password,
       );
+      // Registrar dispositivo para notificaciones push tras login exitoso
+      _pushService.registerWithBackend().ignore();
       emit(Authenticated(user));
     } catch (e) {
       emit(AuthError(_parseError(e)));
@@ -53,6 +59,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         phone: event.phone,
         role: event.role,
       );
+      // Registrar dispositivo tras registro exitoso
+      _pushService.registerWithBackend().ignore();
       emit(Authenticated(user));
     } catch (e) {
       emit(AuthError(_parseError(e)));
@@ -62,6 +70,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Future<void> _onLogoutRequested(LogoutRequested event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     try {
+      await _pushService.unregisterFromBackend();
       await _authRepository.logout();
       emit(Unauthenticated());
     } catch (e) {

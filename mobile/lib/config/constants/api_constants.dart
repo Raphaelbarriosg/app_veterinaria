@@ -3,7 +3,7 @@ class ApiConstants {
   ///   flutter run --dart-define=API_BASE_URL=http://192.168.1.X:3000/api/v1
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.16.107:3000/api/v1',
+    defaultValue: 'https://vetcare-backend-vxua.onrender.com/api/v1',
   );
 
   // Auth Endpoints
