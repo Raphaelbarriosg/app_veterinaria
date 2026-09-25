@@ -62,7 +62,7 @@ Render es ideal para NestJS porque mantiene el servidor en ejecución continua, 
 
 | Clave | Valor |
 |---|---|
-| `NODE_VERSION` | `20` |
+| `NODE_VERSION` | `22` |
 | `NODE_ENV` | `production` |
 | `PORT` | `10000` |
 | `DATABASE_URL` | *(Tu URL de Supabase Pooler del archivo backend/.env)* |

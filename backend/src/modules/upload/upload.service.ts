@@ -15,7 +15,12 @@ export class UploadService implements OnModuleInit {
       this.logger.warn('SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY no configurados.');
     }
 
-    this.supabase = createClient(supabaseUrl || 'http://localhost:54321', supabaseKey || '');
+    this.supabase = createClient(supabaseUrl || 'http://localhost:54321', supabaseKey || '', {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    });
     this.bucketName = process.env.SUPABASE_BUCKET || process.env.SUPABASE_STORAGE_BUCKET || 'vet-uploads';
   }
 
