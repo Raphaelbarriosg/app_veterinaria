@@ -113,19 +113,31 @@ Render es ideal para NestJS porque mantiene el servidor en ejecución continua, 
 
 ---
 
-## Paso 5: Conectar la App Móvil (Flutter) a la Nube
+## Paso 5: App Móvil (Flutter) — Descargar e Instalar en tu Teléfono
 
-Ahora que el backend está en la nube, ya no necesitas emuladores pesados en tu PC:
+El APK ya ha sido compilado en la nube con GitHub Actions:
 
-1. Conecta tu teléfono Android o iOS físico a la computadora por cable USB.
-2. En la terminal de `mobile`:
-   ```bash
-   flutter run --dart-define=API_BASE_URL=https://vetcare-backend-vxua.onrender.com/api/v1
-   ```
-3. O para generar el instalador APK de producción:
-   ```bash
-   flutter build apk --dart-define=API_BASE_URL=https://vetcare-backend-vxua.onrender.com/api/v1
-   ```
+### 📥 Descarga Directa del APK:
+1. Entra a tu pipeline de GitHub: **[Última ejecución de GitHub Actions](https://github.com/Raphaelbarriosg/app_veterinaria/actions/runs/36084637959)**
+2. En la sección inferior **Artifacts**, haz clic en **`vetcare-app-release`** (archivo zip de ~32 MB).
+3. Descomprime el archivo zip para obtener **`app-release.apk`**.
+4. Pasa el archivo a tu teléfono Android (o descárgalo directamente desde el navegador de tu teléfono) e instálalo.
+5. Inicia sesión con cualquiera de los usuarios de prueba:
+   * **Veterinario**: `vet@test.com` / `vet123`
+   * **Dueño**: `owner@test.com` / `owner123`
+   * **Administrador**: `admin@test.com` / `admin123`
+
+---
+
+### 💻 Compilación manual opcional:
+* En dispositivo físico conectado por USB:
+  ```bash
+  flutter run --dart-define=API_BASE_URL=https://vetcare-backend-vxua.onrender.com/api/v1
+  ```
+* Generación local de APK:
+  ```bash
+  flutter build apk --dart-define=API_BASE_URL=https://vetcare-backend-vxua.onrender.com/api/v1
+  ```
 
 ---
 
