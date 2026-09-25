@@ -97,14 +97,14 @@ Render es ideal para NestJS porque mantiene el servidor en ejecución continua, 
 | `NEXT_PUBLIC_API_URL` | `https://vetcare-backend-vxua.onrender.com` |
 
 6. Haz clic en **Deploy**.
-7. En menos de 2 minutos tendrás tu aplicación web lista en una URL como:
-   `https://app-veterinaria-web.vercel.app`
+7. Tu aplicación web se encuentra activa en:
+   **`https://appveterinaria-five.vercel.app`**
 
 ---
 
-## Paso 4: Probar la Aplicación en la Nube
+## Paso 4: Probar la Aplicación en la Nube (¡Verificado con éxito! ✅)
 
-1. Abre la URL generada por Vercel.
+1. Abre la URL en producción: **https://appveterinaria-five.vercel.app**
 2. Inicia sesión con cualquiera de los usuarios de prueba:
    * **Veterinario**: `vet@test.com` / `vet123`
    * **Dueño**: `owner@test.com` / `owner123`
@@ -120,11 +120,11 @@ Ahora que el backend está en la nube, ya no necesitas emuladores pesados en tu 
 1. Conecta tu teléfono Android o iOS físico a la computadora por cable USB.
 2. En la terminal de `mobile`:
    ```bash
-   flutter run --dart-define=API_BASE_URL=https://vetcare-backend.onrender.com/api/v1
+   flutter run --dart-define=API_BASE_URL=https://vetcare-backend-vxua.onrender.com/api/v1
    ```
 3. O para generar el instalador APK de producción:
    ```bash
-   flutter build apk --dart-define=API_BASE_URL=https://vetcare-backend.onrender.com/api/v1
+   flutter build apk --dart-define=API_BASE_URL=https://vetcare-backend-vxua.onrender.com/api/v1
    ```
 
 ---

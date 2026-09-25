@@ -280,8 +280,12 @@ flutter run --dart-define=API_BASE_URL=http://192.168.16.107:3000/api/v1
 - [x] Módulo de Emergencias
 - [x] SaaS B2B: roles CLINIC_ADMIN + membresías
 - [x] Modelo de suscripción con planes
-- [x] **Eliminar `web/` y `web-nuxt/`** — eliminados tras confirmar paridad completa con `web-next/`
 - [x] **Configuración de despliegue en la Nube** — Blueprint de Render (`render.yaml`), soporte de imágenes Supabase en Next.js y guía detallada en `DEPLOY_GUIDE.md`
+- [x] **Despliegue en Producción 100% Operativo** 🚀:
+  - **Backend**: `https://vetcare-backend-vxua.onrender.com` (Render - Node 22 + NestJS + Supabase)
+  - **Frontend Web**: `https://appveterinaria-five.vercel.app` (Vercel - Next.js 16 + React 19)
+  - **Base de Datos & Storage**: Supabase Cloud (PostgreSQL 17 + Bucket `vet-app-images`)
+  - **Flujo de Autenticación E2E y Semáforo Clínico**: Verificado en vivo en la nube.
 
 ### Pendiente
 - [ ] **Notificaciones push en Flutter** — alertas de tratamientos activos
