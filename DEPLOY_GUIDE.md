@@ -94,7 +94,7 @@ Render es ideal para NestJS porque mantiene el servidor en ejecución continua, 
 
 | Clave | Valor |
 |---|---|
-| `NEXT_PUBLIC_API_URL` | `https://vetcare-backend.onrender.com` *(reemplaza con la URL real de Render sin slash al final)* |
+| `NEXT_PUBLIC_API_URL` | `https://vetcare-backend-vxua.onrender.com` |
 
 6. Haz clic en **Deploy**.
 7. En menos de 2 minutos tendrás tu aplicación web lista en una URL como:
