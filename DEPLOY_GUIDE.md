@@ -118,7 +118,7 @@ Render es ideal para NestJS porque mantiene el servidor en ejecución continua, 
 El APK ya ha sido compilado en la nube con GitHub Actions:
 
 ### 📥 Descarga Directa del APK:
-1. Entra a tu pipeline de GitHub: **[Última ejecución de GitHub Actions (Versión 1.0.0+3)](https://github.com/Raphaelbarriosg/app_veterinaria/actions/runs/36206890006)**
+1. Entra a tu pipeline de GitHub: **[Última ejecución de GitHub Actions (Versión 1.0.0+4)](https://github.com/Raphaelbarriosg/app_veterinaria/actions/runs/36210182270)**
 2. En la sección inferior **Artifacts**, haz clic en **`vetcare-app-release`** (archivo zip de ~32 MB).
 3. Descomprime el archivo zip para obtener **`app-release.apk`**.
 4. Pasa el archivo a tu teléfono Android (o descárgalo directamente desde el navegador de tu teléfono) e instálalo.
