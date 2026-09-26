@@ -81,7 +81,7 @@ class TreatmentCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          '${pet.species} ${pet.breed != null ? "• ${pet.breed}" : ""}',
+                          '${pet.speciesDisplay} ${pet.breed != null ? "• ${pet.breed}" : ""}',
                           style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
                         ),
                       ],

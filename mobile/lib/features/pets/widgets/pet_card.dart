@@ -57,7 +57,7 @@ class PetCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${_getSpeciesEmoji(pet.species)} ${pet.species}${pet.breed != null ? " • ${pet.breed}" : ""}',
+                      '${_getSpeciesEmoji(pet.species)} ${pet.speciesDisplay}${pet.breed != null ? " • ${pet.breed}" : ""}',
                       style: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
                     ),
                     const SizedBox(height: 2),

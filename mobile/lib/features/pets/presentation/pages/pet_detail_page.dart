@@ -137,7 +137,7 @@ class _PetDetailPageState extends State<PetDetailPage> {
                         Text(pet.name, style: Theme.of(context).textTheme.headlineLarge),
                         const SizedBox(height: 4),
                         Text(
-                          '${pet.species} ${pet.breed != null ? "• ${pet.breed}" : ""}',
+                          '${pet.speciesDisplay} ${pet.breed != null ? "• ${pet.breed}" : ""}',
                           style: const TextStyle(color: AppTheme.textMuted, fontSize: 16),
                         ),
                       ],

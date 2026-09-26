@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/repositories/pets_repository.dart';
 import 'pets_event.dart';
@@ -21,7 +22,7 @@ class PetsBloc extends Bloc<PetsEvent, PetsState> {
       final pets = await _petsRepository.getMyPets();
       emit(PetsLoaded(pets));
     } catch (e) {
-      emit(PetsError('Error al cargar la lista de mascotas: ${e.toString()}'));
+      emit(PetsError(_parseError(e, 'Error al cargar la lista de mascotas')));
     }
   }
 
@@ -31,7 +32,7 @@ class PetsBloc extends Bloc<PetsEvent, PetsState> {
       final pet = await _petsRepository.getPetDetail(event.id);
       emit(PetDetailLoaded(pet));
     } catch (e) {
-      emit(PetsError('Error al cargar el detalle de la mascota: ${e.toString()}'));
+      emit(PetsError(_parseError(e, 'Error al cargar el detalle de la mascota')));
     }
   }
 
@@ -47,7 +48,7 @@ class PetsBloc extends Bloc<PetsEvent, PetsState> {
       );
       emit(const PetsOperationSuccess('Mascota agregada correctamente'));
     } catch (e) {
-      emit(PetsError('Error al crear la mascota: ${e.toString()}'));
+      emit(PetsError(_parseError(e, 'Error al crear la mascota')));
     }
   }
 
@@ -64,7 +65,7 @@ class PetsBloc extends Bloc<PetsEvent, PetsState> {
       );
       emit(const PetsOperationSuccess('Mascota actualizada correctamente'));
     } catch (e) {
-      emit(PetsError('Error al actualizar la mascota: ${e.toString()}'));
+      emit(PetsError(_parseError(e, 'Error al actualizar la mascota')));
     }
   }
 
@@ -74,7 +75,7 @@ class PetsBloc extends Bloc<PetsEvent, PetsState> {
       await _petsRepository.deletePet(event.id);
       emit(const PetsOperationSuccess('Mascota eliminada correctamente'));
     } catch (e) {
-      emit(PetsError('Error al eliminar la mascota: ${e.toString()}'));
+      emit(PetsError(_parseError(e, 'Error al eliminar la mascota')));
     }
   }
 
@@ -84,7 +85,25 @@ class PetsBloc extends Bloc<PetsEvent, PetsState> {
       final results = await _petsRepository.searchPets(event.query);
       emit(PetsSearchResultsLoaded(results));
     } catch (e) {
-      emit(PetsError('Error al buscar mascotas: ${e.toString()}'));
+      emit(PetsError(_parseError(e, 'Error al buscar mascotas')));
     }
+  }
+
+  String _parseError(dynamic e, String prefix) {
+    if (e is DioException) {
+      final data = e.response?.data;
+      if (data is Map && data['message'] != null) {
+        final msg = data['message'];
+        if (msg is List) return '$prefix: ${msg.join(', ')}';
+        return '$prefix: $msg';
+      }
+      if (e.response?.statusCode == 409) return '$prefix: Ya tienes una mascota registrada con este nombre.';
+      if (e.response?.statusCode == 404) return '$prefix: Mascota no encontrada.';
+      if (e.response?.statusCode == 403) return '$prefix: No tienes permisos para esta acción.';
+      if (e.response?.statusCode == 400) return '$prefix: Datos inválidos. Revisa el formulario.';
+      if (e.response?.statusCode == 500) return '$prefix: Error interno del servidor. Inténtalo más tarde.';
+      return '$prefix: Error de conexión con el servidor.';
+    }
+    return '$prefix: ${e.toString()}';
   }
 }

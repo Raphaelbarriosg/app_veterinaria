@@ -22,10 +22,28 @@ class _PetFormPageState extends State<PetFormPage> {
   late final TextEditingController _breedController;
   late final TextEditingController _weightController;
   
-  String _selectedSpecies = 'Perro';
+  String _selectedSpecies = 'DOG';
   DateTime? _selectedBirthDate;
 
-  final List<String> _speciesOptions = ['Perro', 'Gato', 'Conejo', 'Ave', 'Otro'];
+  static const List<Map<String, String>> _speciesOptions = [
+    {'code': 'DOG', 'label': 'Perro'},
+    {'code': 'CAT', 'label': 'Gato'},
+    {'code': 'RODENT', 'label': 'Conejo / Roedor'},
+    {'code': 'BIRD', 'label': 'Ave'},
+    {'code': 'REPTILE', 'label': 'Reptil'},
+    {'code': 'OTHER', 'label': 'Otro'},
+  ];
+
+  static String _normalizeSpecies(String? species) {
+    if (species == null) return 'DOG';
+    final s = species.trim().toUpperCase();
+    if (s.contains('PERRO') || s.contains('CAN') || s == 'DOG') return 'DOG';
+    if (s.contains('GATO') || s.contains('FEL') || s == 'CAT') return 'CAT';
+    if (s.contains('AVE') || s.contains('PAJ') || s == 'BIRD') return 'BIRD';
+    if (s.contains('CONEJ') || s.contains('ROED') || s == 'RODENT') return 'RODENT';
+    if (s.contains('REPTIL') || s == 'REPTILE') return 'REPTILE';
+    return 'OTHER';
+  }
 
   @override
   void initState() {
@@ -37,11 +55,7 @@ class _PetFormPageState extends State<PetFormPage> {
     );
     
     if (widget.petToEdit != null) {
-      if (_speciesOptions.contains(widget.petToEdit!.species)) {
-        _selectedSpecies = widget.petToEdit!.species;
-      } else {
-        _selectedSpecies = 'Otro';
-      }
+      _selectedSpecies = _normalizeSpecies(widget.petToEdit!.species);
       _selectedBirthDate = widget.petToEdit!.birthDate;
     }
   }
@@ -167,17 +181,17 @@ class _PetFormPageState extends State<PetFormPage> {
 
                     // Selector de Especie (Dropdown)
                     DropdownButtonFormField<String>(
-                      initialValue: _selectedSpecies,
+                      value: _selectedSpecies,
                       decoration: const InputDecoration(
                         labelText: 'Especie',
                         prefixIcon: Icon(Icons.category_outlined, color: AppTheme.textMuted),
                       ),
                       dropdownColor: AppTheme.surfaceSlate,
                       style: const TextStyle(color: AppTheme.textLight),
-                      items: _speciesOptions.map((species) {
+                      items: _speciesOptions.map((opt) {
                         return DropdownMenuItem<String>(
-                          value: species,
-                          child: Text(species),
+                          value: opt['code']!,
+                          child: Text(opt['label']!),
                         );
                       }).toList(),
                       onChanged: (value) {

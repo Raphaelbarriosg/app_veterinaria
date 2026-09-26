@@ -7,11 +7,14 @@ import { AuditService } from '../../common/services/audit.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
+import { Role } from '../../common/enums/role.enum';
+
 // Mocks
 const mockPrismaService = {
   user: {
     findUnique: jest.fn(),
     create: jest.fn(),
+    update: jest.fn(),
   },
   refreshToken: {
     create: jest.fn(),
@@ -67,7 +70,7 @@ describe('AuthService', () => {
       password: 'password123',
       name: 'Test User',
       phone: '1234567890',
-      role: 'OWNER',
+      role: Role.OWNER,
     };
 
     const createdUser = {

@@ -80,4 +80,33 @@ class PetModel {
       return '$years ${years == 1 ? "año" : "años"} y $remainingMonths ${remainingMonths == 1 ? "mes" : "meses"}';
     }
   }
+
+  String get speciesDisplay {
+    final s = species.trim().toUpperCase();
+    switch (s) {
+      case 'DOG':
+      case 'PERRO':
+      case 'CANINO':
+        return 'Perro';
+      case 'CAT':
+      case 'GATO':
+      case 'FELINO':
+        return 'Gato';
+      case 'BIRD':
+      case 'AVE':
+      case 'PAJARO':
+        return 'Ave';
+      case 'RODENT':
+      case 'CONEJO':
+      case 'ROEDOR':
+        return 'Conejo / Roedor';
+      case 'REPTILE':
+      case 'REPTIL':
+        return 'Reptil';
+      case 'OTHER':
+      case 'OTRO':
+      default:
+        return 'Otro';
+    }
+  }
 }

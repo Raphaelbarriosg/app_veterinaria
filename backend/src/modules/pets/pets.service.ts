@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreatePetDto } from './dto/create-pet.dto';
 import { UpdatePetDto } from './dto/update-pet.dto';
@@ -55,20 +55,65 @@ export class PetsService {
     throw new BadRequestException('No hay clínicas activas disponibles en el sistema');
   }
 
+  /**
+   * Normaliza cualquier entrada de especie (español, inglés, mayúsculas, minúsculas)
+   * al enum estándar PetSpecies de Prisma.
+   */
+  private normalizeSpecies(species?: string): PetSpecies {
+    if (!species) return PetSpecies.OTHER;
+    const clean = species.trim().toLowerCase();
+    const map: Record<string, PetSpecies> = {
+      dog: PetSpecies.DOG,
+      perro: PetSpecies.DOG,
+      canino: PetSpecies.DOG,
+      cat: PetSpecies.CAT,
+      gato: PetSpecies.CAT,
+      felino: PetSpecies.CAT,
+      bird: PetSpecies.BIRD,
+      ave: PetSpecies.BIRD,
+      pajaro: PetSpecies.BIRD,
+      pájaro: PetSpecies.BIRD,
+      rodent: PetSpecies.RODENT,
+      conejo: PetSpecies.RODENT,
+      roedor: PetSpecies.RODENT,
+      hamster: PetSpecies.RODENT,
+      hámster: PetSpecies.RODENT,
+      reptile: PetSpecies.REPTILE,
+      reptil: PetSpecies.REPTILE,
+      other: PetSpecies.OTHER,
+      otro: PetSpecies.OTHER,
+    };
+    if (map[clean]) {
+      return map[clean];
+    }
+    const upper = species.trim().toUpperCase();
+    if (Object.values(PetSpecies).includes(upper as PetSpecies)) {
+      return upper as PetSpecies;
+    }
+    return PetSpecies.OTHER;
+  }
+
   async create(ownerId: string, dto: CreatePetDto, clinicId?: string) {
     const resolvedClinicId = await this.resolveClinicId(ownerId, clinicId);
 
-    return this.prisma.pet.create({
-      data: {
-        clinicId: resolvedClinicId,
-        ownerId,
-        name: dto.name,
-        species: dto.species as PetSpecies,
-        breed: dto.breed,
-        weight: dto.weight,
-        birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
-      },
-    });
+    try {
+      return await this.prisma.pet.create({
+        data: {
+          clinicId: resolvedClinicId,
+          ownerId,
+          name: dto.name,
+          species: this.normalizeSpecies(dto.species),
+          breed: dto.breed,
+          weight: dto.weight,
+          birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
+        },
+      });
+    } catch (error: any) {
+      if (error?.code === 'P2002') {
+        throw new ConflictException('Ya tienes una mascota registrada con este nombre');
+      }
+      throw error;
+    }
   }
 
   async findAllByOwner(ownerId: string) {
@@ -126,15 +171,22 @@ export class PetsService {
       birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
     };
 
-    // Convertir species a enum si está presente
+    // Convertir species a enum normalizado si está presente
     if (dto.species) {
-      updateData.species = dto.species as PetSpecies;
+      updateData.species = this.normalizeSpecies(dto.species);
     }
 
-    return this.prisma.pet.update({
-      where: { id },
-      data: updateData,
-    });
+    try {
+      return await this.prisma.pet.update({
+        where: { id },
+        data: updateData,
+      });
+    } catch (error: any) {
+      if (error?.code === 'P2002') {
+        throw new ConflictException('Ya tienes una mascota registrada con este nombre');
+      }
+      throw error;
+    }
   }
 
   async searchByName(query: string) {
