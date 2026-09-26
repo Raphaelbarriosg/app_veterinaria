@@ -87,10 +87,21 @@ class VetApp extends StatelessWidget {
                 final petId = settings.arguments as String;
                 return MaterialPageRoute(builder: (_) => PetDetailPage(petId: petId));
               case '/pet-form':
+                if (settings.arguments is Map<String, dynamic>) {
+                  final map = settings.arguments as Map<String, dynamic>;
+                  return MaterialPageRoute(
+                    builder: (_) => PetFormPage(
+                      petToEdit: map['petToEdit'] as PetModel?,
+                      ownerId: map['ownerId'] as String?,
+                      ownerName: map['ownerName'] as String?,
+                    ),
+                  );
+                }
                 final petToEdit = settings.arguments as PetModel?;
                 return MaterialPageRoute(builder: (_) => PetFormPage(petToEdit: petToEdit));
               case '/create-treatment':
-                return MaterialPageRoute(builder: (_) => const CreateTreatmentPage());
+                final initialPet = settings.arguments as PetModel?;
+                return MaterialPageRoute(builder: (_) => CreateTreatmentPage(initialPet: initialPet));
               case '/treatment-detail':
                 final id = settings.arguments as String;
                 return MaterialPageRoute(builder: (_) => TreatmentDetailPage(treatmentId: id));

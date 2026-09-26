@@ -24,4 +24,8 @@ export class CreatePetDto {
   @IsOptional()
   @IsString()
   microchip?: string;
+
+  @IsOptional()
+  @IsString()
+  ownerId?: string;
 }

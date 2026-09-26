@@ -14,6 +14,7 @@ class PetsBloc extends Bloc<PetsEvent, PetsState> {
     on<UpdatePetRequested>(_onUpdatePetRequested);
     on<DeletePetRequested>(_onDeletePetRequested);
     on<SearchPetsRequested>(_onSearchPetsRequested);
+    on<LoadPetsByOwner>(_onLoadPetsByOwner);
   }
 
   Future<void> _onLoadPets(LoadPets event, Emitter<PetsState> emit) async {
@@ -36,6 +37,16 @@ class PetsBloc extends Bloc<PetsEvent, PetsState> {
     }
   }
 
+  Future<void> _onLoadPetsByOwner(LoadPetsByOwner event, Emitter<PetsState> emit) async {
+    emit(PetsLoading());
+    try {
+      final pets = await _petsRepository.getPetsByOwner(event.ownerId);
+      emit(PetsLoaded(pets));
+    } catch (e) {
+      emit(PetsError(_parseError(e, 'Error al cargar las mascotas del tutor')));
+    }
+  }
+
   Future<void> _onCreatePetRequested(CreatePetRequested event, Emitter<PetsState> emit) async {
     emit(PetsLoading());
     try {
@@ -45,6 +56,7 @@ class PetsBloc extends Bloc<PetsEvent, PetsState> {
         breed: event.breed,
         weight: event.weight,
         birthDate: event.birthDate,
+        ownerId: event.ownerId,
       );
       emit(const PetsOperationSuccess('Mascota agregada correctamente'));
     } catch (e) {

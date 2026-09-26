@@ -13,9 +13,11 @@ class ApiConstants {
 
   // Users Endpoints
   static const String userMe = '/users/me';
+  static const String tutors = '/users/tutors';
 
   // Pets Endpoints
   static const String pets = '/pets';
+  static const String petsByOwner = '/pets/by-owner';
 
   // Treatments Endpoints
   static const String treatments = '/treatments';

@@ -170,7 +170,45 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 12),
+
+                      // Indicador descriptivo del rol seleccionado
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: _selectedRole == 'VET'
+                              ? AppTheme.primaryMint.withValues(alpha: 0.1)
+                              : AppTheme.darkMetallic.withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: _selectedRole == 'VET' ? AppTheme.primaryMint : AppTheme.darkMetallic,
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              _selectedRole == 'VET' ? Icons.medical_services_outlined : Icons.pets_rounded,
+                              size: 18,
+                              color: _selectedRole == 'VET' ? AppTheme.primaryMint : AppTheme.textMuted,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _selectedRole == 'VET'
+                                    ? 'Perfil Médico Veterinario: registrarás tutores, pacientes y prescribirás tratamientos.'
+                                    : 'Perfil Dueño de Mascota: registrarás a tus mascotas y enviarás reportes diarios.',
+                                style: TextStyle(
+                                  color: _selectedRole == 'VET' ? AppTheme.primaryMint : AppTheme.textMuted,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
 
                       // Campo Nombre
                       AuthTextField(

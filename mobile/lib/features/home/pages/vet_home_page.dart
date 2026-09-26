@@ -7,6 +7,8 @@ import '../../auth/presentation/bloc/auth_state.dart';
 import '../../treatments/presentation/pages/dashboard_page.dart';
 import '../../treatments/presentation/pages/treatments_list_page.dart';
 
+import '../../pets/presentation/pages/tutors_list_page.dart';
+
 class VetHomePage extends StatefulWidget {
   const VetHomePage({super.key});
 
@@ -20,6 +22,7 @@ class _VetHomePageState extends State<VetHomePage> {
   final List<Widget> _pages = [
     const DashboardPage(),
     const TreatmentsListPage(),
+    const TutorsListPage(),
     const _VetProfileTab(),
   ];
 
@@ -52,6 +55,11 @@ class _VetHomePageState extends State<VetHomePage> {
             icon: Icon(Icons.assignment_outlined),
             activeIcon: Icon(Icons.assignment_rounded),
             label: 'Historial',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people_alt_outlined),
+            activeIcon: Icon(Icons.people_alt_rounded),
+            label: 'Pacientes',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.local_hospital_outlined),
@@ -154,6 +162,47 @@ class _VetProfileTab extends StatelessWidget {
                             const Divider(color: AppTheme.darkMetallic, height: 24),
                             _buildProfileItem(Icons.phone_outlined, 'Teléfono', user.phone!),
                           ],
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Accesos directos clínicos
+                  Card(
+                    color: AppTheme.surfaceSlate.withValues(alpha: 0.6),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(Icons.medical_services_outlined, color: AppTheme.primaryMint, size: 20),
+                              SizedBox(width: 8),
+                              Text(
+                                'Gestión Clínica',
+                                style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textLight),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Como médico veterinario puedes registrar tutores, ver las mascotas asociadas a cada tutor y recetar tratamientos post-operatorios.',
+                            style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                          ),
+                          const SizedBox(height: 14),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryMint,
+                              foregroundColor: AppTheme.backgroundCharcoal,
+                            ),
+                            onPressed: () {
+                              Navigator.of(context).pushNamed('/create-treatment');
+                            },
+                            icon: const Icon(Icons.add_rounded),
+                            label: const Text('Crear Nuevo Tratamiento'),
+                          ),
                         ],
                       ),
                     ),

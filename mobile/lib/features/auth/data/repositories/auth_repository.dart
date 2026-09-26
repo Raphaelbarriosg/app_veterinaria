@@ -107,4 +107,31 @@ class AuthRepository {
   Future<String?> getSavedRole() async {
     return await _storage.getRole();
   }
+
+  /// Buscar o listar tutores de la clínica (solo VET / CLINIC_ADMIN)
+  Future<List<UserModel>> getTutors({String? query}) async {
+    final response = await _apiClient.dio.get(
+      ApiConstants.tutors,
+      queryParameters: query != null && query.isNotEmpty ? {'q': query} : null,
+    );
+    final list = response.data as List<dynamic>;
+    return list.map((json) => UserModel.fromJson(json)).toList();
+  }
+
+  /// Registrar nuevo tutor desde la veterinaria
+  Future<UserModel> createTutor({
+    required String name,
+    required String email,
+    String? phone,
+  }) async {
+    final response = await _apiClient.dio.post(
+      ApiConstants.tutors,
+      data: {
+        'name': name,
+        'email': email,
+        if (phone != null && phone.isNotEmpty) 'phone': phone,
+      },
+    );
+    return UserModel.fromJson(response.data);
+  }
 }

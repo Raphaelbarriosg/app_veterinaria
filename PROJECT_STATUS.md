@@ -1,6 +1,6 @@
 # Estado del Proyecto — VetCare SaaS Multi-Tenant
 
-> Última actualización: 24 de septiembre de 2026
+> Última actualización: 26 de septiembre de 2026
 
 Este documento centraliza el avance actual, la arquitectura técnica y el estado real del ecosistema VetCare.
 
@@ -15,7 +15,7 @@ Este documento centraliza el avance actual, la arquitectura técnica y el estado
 | **Health Check** | Render API | [/api/v1/health](https://vetcare-backend-vxua.onrender.com/api/v1/health) | 🟢 `{"status":"ok","environment":"production"}` |
 | **API Docs (Swagger)** | Render Docs | [/api/docs](https://vetcare-backend-vxua.onrender.com/api/docs) | 🟢 **Swagger UI 11.x Activo** |
 | **Base de Datos** | **Supabase** | `aws-1-us-east-2.pooler.supabase.com:6543` | 🟢 **PostgreSQL 17+ (Pooler + Direct)** |
-| **App Móvil (Android APK)** | **GitHub Actions** | [Artifact Run #36253214184 (v1.0.0+6)](https://github.com/Raphaelbarriosg/app_veterinaria/actions/runs/36253214184) | 🟢 **APK Compilado (~32.6 MB)** |
+| **App Móvil (Android APK)** | **GitHub Actions** | [Artifact v1.0.0+7 en progreso](https://github.com/Raphaelbarriosg/app_veterinaria/actions) | 🟡 **Compilando (v1.0.0+7 - Flujo Clínico de Tutores)** |
 
 ---
 
@@ -314,6 +314,18 @@ flutter run --dart-define=API_BASE_URL=http://192.168.16.107:3000/api/v1
   - Resuelto casteo de tipos null en deserialización JSON (`UserModel.fromJson`, `TreatmentModel.fromJson`, etc.).
   - App móvil pre-configurada para apuntar al backend en la nube con timeouts de 30 segundos.
   - `PushNotificationService` conectado al ciclo de autenticación en `AuthBloc`.
+
+- [x] **Flujo Clínico de Tutores y Pacientes en Móvil y Backend (v1.0.0+7)** 🩺:
+  - **Backend API**:
+    - `GET /api/v1/users/tutors` — Búsqueda y listado de tutores con conteo de mascotas para veterinarios.
+    - `POST /api/v1/users/tutors` — Registro exprés de tutores directamente desde la clínica con asignación automática de membresía.
+    - `GET /api/v1/pets/by-owner/:ownerId` — Acceso a todas las mascotas de un tutor específico por el médico.
+    - `POST /api/v1/pets` — Habilitado para rol `VET` y `CLINIC_ADMIN` permitiendo asociar mascotas a cualquier tutor mediante `ownerId`.
+  - **App Móvil (Flutter)**:
+    - **Nueva Pestaña "Pacientes" en VetHomePage**: Directorio clínico de tutores con vista expandible de sus mascotas, búsqueda rápida, registro de nuevos tutores y acceso directo a "Iniciar Tratamiento".
+    - **Crear Tratamiento Rediseñado (`CreateTreatmentPage`)**: Flujo intuitivo en dos pasos (Buscar/Registrar Tutor → Seleccionar Mascota del Tutor → Prescribir).
+    - **Registro de Mascota Clínico (`PetFormPage`)**: Soporte para registrar mascotas directamente asignadas a un tutor con badge informativo.
+    - **Claridad de Roles en Registro (`RegisterPage`)**: Mensaje dinámico explicativo según el rol para evitar registros erróneos de veterinarios como dueños.
 
 ### Próximos Pasos Sugeridos
 - [ ] **Credenciales de Firebase Cloud Messaging (FCM)** — configuración de `google-services.json` para entrega de notificaciones push en producción (actualmente opera en modo Dry-Run en backend).

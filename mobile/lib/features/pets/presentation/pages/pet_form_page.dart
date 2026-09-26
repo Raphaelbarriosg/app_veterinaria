@@ -9,8 +9,15 @@ import '../bloc/pets_state.dart';
 
 class PetFormPage extends StatefulWidget {
   final PetModel? petToEdit;
+  final String? ownerId;
+  final String? ownerName;
 
-  const PetFormPage({super.key, this.petToEdit});
+  const PetFormPage({
+    super.key,
+    this.petToEdit,
+    this.ownerId,
+    this.ownerName,
+  });
 
   @override
   State<PetFormPage> createState() => _PetFormPageState();
@@ -120,6 +127,7 @@ class _PetFormPageState extends State<PetFormPage> {
             breed: breed.isEmpty ? null : breed,
             weight: weight,
             birthDate: _selectedBirthDate,
+            ownerId: widget.ownerId,
           ),
         );
       }
@@ -164,6 +172,33 @@ class _PetFormPageState extends State<PetFormPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    if (widget.ownerName != null) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryMint.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppTheme.primaryMint.withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.person_outline_rounded, color: AppTheme.primaryMint, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Registrando para el tutor: ${widget.ownerName}',
+                                style: const TextStyle(
+                                  color: AppTheme.primaryMint,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     // Campo Nombre
                     AuthTextField(
                       controller: _nameController,

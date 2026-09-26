@@ -20,13 +20,14 @@ class PetsRepository {
     return PetModel.fromJson(response.data);
   }
 
-  /// Crear mascota (solo OWNER)
+  /// Crear mascota (OWNER, o VET/CLINIC_ADMIN asignando a un tutor)
   Future<PetModel> createPet({
     required String name,
     required String species,
     String? breed,
     double? weight,
     DateTime? birthDate,
+    String? ownerId,
   }) async {
     final response = await _apiClient.dio.post(
       ApiConstants.pets,
@@ -36,9 +37,17 @@ class PetsRepository {
         if (breed != null && breed.isNotEmpty) 'breed': breed,
         if (weight != null) 'weight': weight,
         if (birthDate != null) 'birthDate': birthDate.toIso8601String(),
+        if (ownerId != null && ownerId.isNotEmpty) 'ownerId': ownerId,
       },
     );
     return PetModel.fromJson(response.data);
+  }
+
+  /// Obtener mascotas de un dueño o tutor específico
+  Future<List<PetModel>> getPetsByOwner(String ownerId) async {
+    final response = await _apiClient.dio.get('${ApiConstants.petsByOwner}/$ownerId');
+    final list = response.data as List<dynamic>;
+    return list.map((json) => PetModel.fromJson(json)).toList();
   }
 
   /// Actualizar mascota (solo OWNER)

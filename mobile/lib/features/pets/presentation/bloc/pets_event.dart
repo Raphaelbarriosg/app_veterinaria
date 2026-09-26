@@ -23,6 +23,7 @@ class CreatePetRequested extends PetsEvent {
   final String? breed;
   final double? weight;
   final DateTime? birthDate;
+  final String? ownerId;
 
   const CreatePetRequested({
     required this.name,
@@ -30,10 +31,19 @@ class CreatePetRequested extends PetsEvent {
     this.breed,
     this.weight,
     this.birthDate,
+    this.ownerId,
   });
 
   @override
-  List<Object?> get props => [name, species, breed, weight, birthDate];
+  List<Object?> get props => [name, species, breed, weight, birthDate, ownerId];
+}
+
+class LoadPetsByOwner extends PetsEvent {
+  final String ownerId;
+  const LoadPetsByOwner(this.ownerId);
+
+  @override
+  List<Object?> get props => [ownerId];
 }
 
 class UpdatePetRequested extends PetsEvent {

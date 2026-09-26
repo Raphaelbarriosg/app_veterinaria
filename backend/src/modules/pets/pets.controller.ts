@@ -1,6 +1,7 @@
 import {
   Controller, Get, Post, Patch, Delete,
   Body, Param, Query, UseGuards, Request,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PetsService } from './pets.service';
 import { CreatePetDto } from './dto/create-pet.dto';
@@ -20,18 +21,23 @@ export class PetsController {
   ) {}
 
   @Post()
-  @Roles(Role.OWNER)
+  @Roles(Role.OWNER, Role.VET, Role.CLINIC_ADMIN)
   async create(
-    @Request() req: { user: { userId: string } },
+    @Request() req: { user: { userId: string; role: string } },
     @Body() dto: CreatePetDto,
   ) {
-    const result = await this.petsService.create(req.user.userId, dto);
+    const targetOwnerId =
+      (req.user.role === Role.VET || req.user.role === Role.CLINIC_ADMIN) && dto.ownerId
+        ? dto.ownerId
+        : req.user.userId;
+
+    const result = await this.petsService.create(targetOwnerId, dto, undefined, req.user.userId);
     this.auditService.logAsync({
       action: AuditAction.PET_CREATED,
       userId: req.user.userId,
       resourceType: 'pet',
       resourceId: result.id,
-      details: { name: dto.name, species: dto.species },
+      details: { name: dto.name, species: dto.species, ownerId: targetOwnerId },
     });
     return result;
   }
@@ -40,6 +46,18 @@ export class PetsController {
   @Roles(Role.OWNER)
   async findAll(@Request() req: { user: { userId: string } }) {
     return this.petsService.findAllByOwner(req.user.userId);
+  }
+
+  @Get('by-owner/:ownerId')
+  @Roles(Role.VET, Role.CLINIC_ADMIN, Role.OWNER)
+  async findByOwner(
+    @Param('ownerId') ownerId: string,
+    @Request() req: { user: { userId: string; role: string } },
+  ) {
+    if (req.user.role === Role.OWNER && req.user.userId !== ownerId) {
+      throw new ForbiddenException('No tienes acceso a estas mascotas');
+    }
+    return this.petsService.findAllByOwner(ownerId);
   }
 
   @Get('search')

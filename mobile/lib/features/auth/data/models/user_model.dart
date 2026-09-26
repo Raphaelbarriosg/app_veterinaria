@@ -5,6 +5,7 @@ class UserModel {
   final String? phone;
   final String role;
   final DateTime? createdAt;
+  final int petCount;
 
   const UserModel({
     required this.id,
@@ -13,6 +14,7 @@ class UserModel {
     this.phone,
     required this.role,
     this.createdAt,
+    this.petCount = 0,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -25,6 +27,9 @@ class UserModel {
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'].toString())
           : null,
+      petCount: json['_count'] is Map && json['_count']['ownedPets'] is int
+          ? json['_count']['ownedPets'] as int
+          : 0,
     );
   }
 

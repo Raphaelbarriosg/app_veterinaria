@@ -9,9 +9,9 @@ export class PetsService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Resolver clinicId: si se provee usarlo, si no, usar la primera clínica del usuario
+   * Resolver clinicId: si se provee usarlo, si no, usar la clínica del creador o del usuario
    */
-  private async resolveClinicId(userId: string, clinicId?: string): Promise<string> {
+  private async resolveClinicId(userId: string, clinicId?: string, creatorUserId?: string): Promise<string> {
     if (clinicId) {
       const member = await this.prisma.clinicMember.findUnique({
         where: { clinicId_userId: { clinicId, userId } },
@@ -22,6 +22,24 @@ export class PetsService {
         });
       }
       return clinicId;
+    }
+
+    // Si un veterinario o administrador está registrando la mascota para el tutor
+    if (creatorUserId) {
+      const creatorMembership = await this.prisma.clinicMember.findFirst({
+        where: { userId: creatorUserId, isActive: true },
+      });
+      if (creatorMembership) {
+        const member = await this.prisma.clinicMember.findUnique({
+          where: { clinicId_userId: { clinicId: creatorMembership.clinicId, userId } },
+        });
+        if (!member) {
+          await this.prisma.clinicMember.create({
+            data: { clinicId: creatorMembership.clinicId, userId, role: 'OWNER', isActive: true },
+          });
+        }
+        return creatorMembership.clinicId;
+      }
     }
 
     // Fallback: primera clínica activa del usuario
@@ -93,8 +111,8 @@ export class PetsService {
     return PetSpecies.OTHER;
   }
 
-  async create(ownerId: string, dto: CreatePetDto, clinicId?: string) {
-    const resolvedClinicId = await this.resolveClinicId(ownerId, clinicId);
+  async create(ownerId: string, dto: CreatePetDto, clinicId?: string, creatorUserId?: string) {
+    const resolvedClinicId = await this.resolveClinicId(ownerId, clinicId, creatorUserId);
 
     try {
       return await this.prisma.pet.create({
