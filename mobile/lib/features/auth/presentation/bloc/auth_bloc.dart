@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/services/push_notification_service.dart';
 import '../../data/repositories/auth_repository.dart';
@@ -79,7 +80,27 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   String _parseError(dynamic e) {
-    // Si es un error de Dio, podemos extraer el mensaje de la respuesta
+    if (e is DioException) {
+      final data = e.response?.data;
+      if (data is Map && data['message'] != null) {
+        final msg = data['message'];
+        if (msg is List) return msg.join(', ');
+        return msg.toString();
+      }
+      if (e.response?.statusCode == 409) {
+        return 'El correo electrónico ya está registrado.';
+      }
+      if (e.response?.statusCode == 401) {
+        return 'Credenciales inválidas. Verifica tu correo o contraseña.';
+      }
+      if (e.response?.statusCode == 400) {
+        return 'Datos de registro inválidos. Verifica la información ingresada.';
+      }
+      if (e.response?.statusCode == 500) {
+        return 'Error en el servidor. Inténtalo de nuevo más tarde.';
+      }
+      return 'Error de conexión con el servidor. Verifica tu internet.';
+    }
     if (e.toString().contains('401') || e.toString().contains('Unauthorized')) {
       return 'Credenciales inválidas. Verifica tu correo o contraseña.';
     }

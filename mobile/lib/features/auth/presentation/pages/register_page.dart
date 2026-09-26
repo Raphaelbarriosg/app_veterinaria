@@ -36,7 +36,7 @@ class _RegisterPageState extends State<RegisterPage> {
       context.read<AuthBloc>().add(
         RegisterRequested(
           name: _nameController.text.trim(),
-          email: _emailController.text.trim(),
+          email: _emailController.text.trim().toLowerCase(),
           phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
           password: _passwordController.text,
           role: _selectedRole,
