@@ -15,7 +15,7 @@ Este documento centraliza el avance actual, la arquitectura técnica y el estado
 | **Health Check** | Render API | [/api/v1/health](https://vetcare-backend-vxua.onrender.com/api/v1/health) | 🟢 `{"status":"ok","environment":"production"}` |
 | **API Docs (Swagger)** | Render Docs | [/api/docs](https://vetcare-backend-vxua.onrender.com/api/docs) | 🟢 **Swagger UI 11.x Activo** |
 | **Base de Datos** | **Supabase** | `aws-1-us-east-2.pooler.supabase.com:6543` | 🟢 **PostgreSQL 17+ (Pooler + Direct)** |
-| **App Móvil (Android APK)** | **GitHub Actions** | [Artifact Run #36249017073 (v1.0.0+5)](https://github.com/Raphaelbarriosg/app_veterinaria/actions/runs/36249017073) | 🟢 **APK Compilado (~32.6 MB)** |
+| **App Móvil (Android APK)** | **GitHub Actions** | [Artifact Run #36253214184 (v1.0.0+6)](https://github.com/Raphaelbarriosg/app_veterinaria/actions/runs/36253214184) | 🟢 **APK Compilado (~32.6 MB)** |
 
 ---
 
