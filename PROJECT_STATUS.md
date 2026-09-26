@@ -15,8 +15,7 @@ Este documento centraliza el avance actual, la arquitectura técnica y el estado
 | **Health Check** | Render API | [/api/v1/health](https://vetcare-backend-vxua.onrender.com/api/v1/health) | 🟢 `{"status":"ok","environment":"production"}` |
 | **API Docs (Swagger)** | Render Docs | [/api/docs](https://vetcare-backend-vxua.onrender.com/api/docs) | 🟢 **Swagger UI 11.x Activo** |
 | **Base de Datos** | **Supabase** | `aws-1-us-east-2.pooler.supabase.com:6543` | 🟢 **PostgreSQL 17+ (Pooler + Direct)** |
-| **Storage de Fotos** | **Supabase** | Bucket `vet-app-images` | 🟢 **Almacenamiento público activo** |
-| **App Móvil (Android APK)** | **GitHub Actions** | [Artifact Run #36084637959](https://github.com/Raphaelbarriosg/app_veterinaria/actions/runs/36084637959) | 🟢 **APK Compilado (~32.6 MB)** |
+| **App Móvil (Android APK)** | **GitHub Actions** | [Artifact Run #36205297762 (v1.0.0+2)](https://github.com/Raphaelbarriosg/app_veterinaria/actions/runs/36205297762) | 🟢 **APK Compilado (~32.6 MB)** |
 
 ---
 
@@ -223,7 +222,7 @@ flutter build apk --release
 flutter run --dart-define=API_BASE_URL=https://vetcare-backend-vxua.onrender.com/api/v1
 ```
 > Ver `mobile/.env.example` para referencia completa.
-> **Descarga directa del APK generado en la nube**: [GitHub Actions Run #36084637959](https://github.com/Raphaelbarriosg/app_veterinaria/actions/runs/36084637959) (Artifact `vetcare-app-release`).
+> **Descarga directa del APK generado en la nube**: [GitHub Actions Run #36205297762 (v1.0.0+2)](https://github.com/Raphaelbarriosg/app_veterinaria/actions/runs/36205297762) (Artifact `vetcare-app-release`).
 
 ---
 
@@ -311,7 +310,7 @@ flutter run --dart-define=API_BASE_URL=http://192.168.16.107:3000/api/v1
   - **Flujo de Autenticación E2E y Semáforo Clínico**: Verificado en vivo en la nube mediante navegador automatizado.
 - [x] **Compilación Automatizada de la App Móvil en la Nube** 📱:
   - Pipeline de GitHub Actions con Java 17 + Flutter estable para generar el release APK sin consumir recursos locales.
-  - Artefacto generado y listo para instalar: `vetcare-app-release` (~32.6 MB) en [GitHub Actions Run #36084637959](https://github.com/Raphaelbarriosg/app_veterinaria/actions/runs/36084637959).
+  - Artefacto generado y listo para instalar: `vetcare-app-release` (~32.6 MB) en [GitHub Actions Run #36205297762 (v1.0.0+2)](https://github.com/Raphaelbarriosg/app_veterinaria/actions/runs/36205297762).
   - App móvil pre-configurada para apuntar al backend en la nube con timeouts de 30 segundos.
   - `PushNotificationService` conectado al ciclo de autenticación en `AuthBloc`.
 
