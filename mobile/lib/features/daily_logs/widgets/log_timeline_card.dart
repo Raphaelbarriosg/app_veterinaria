@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../config/theme/app_theme.dart';
 import '../data/models/daily_log_model.dart';
+import 'log_image_viewer_page.dart';
 
 class LogTimelineCard extends StatelessWidget {
   final DailyLogModel log;
@@ -92,19 +93,56 @@ class LogTimelineCard extends StatelessWidget {
                 ),
                 if (log.imageUrl != null) ...[
                   const SizedBox(width: 16),
-                  // Imagen miniatura
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      log.imageUrl!,
-                      width: 60,
-                      height: 60,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        width: 60,
-                        height: 60,
-                        color: AppTheme.darkMetallic,
-                        child: const Icon(Icons.broken_image_outlined, size: 20, color: AppTheme.textMuted),
+                  // Imagen miniatura con apertura a pantalla completa
+                  Tooltip(
+                    message: 'Tocar para ver imagen completa',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () {
+                          LogImageViewerPage.open(context, log, 'log_image_${log.id}');
+                        },
+                        child: Stack(
+                          children: [
+                            Hero(
+                              tag: 'log_image_${log.id}',
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.network(
+                                  log.imageUrl!,
+                                  width: 64,
+                                  height: 64,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => Container(
+                                    width: 64,
+                                    height: 64,
+                                    color: AppTheme.darkMetallic,
+                                    child: const Icon(Icons.broken_image_outlined, size: 20, color: AppTheme.textMuted),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // Indicador visual de lupa/zoom
+                            Positioned(
+                              bottom: 3,
+                              right: 3,
+                              child: Container(
+                                padding: const EdgeInsets.all(3),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.65),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 0.8),
+                                ),
+                                child: const Icon(
+                                  Icons.zoom_in_rounded,
+                                  color: Colors.white,
+                                  size: 13,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
