@@ -20,12 +20,19 @@ class DashboardStats {
 
   factory DashboardStats.fromJson(Map<String, dynamic> json) {
     return DashboardStats(
-      expectedDoses: json['expectedDoses'] as int? ?? 0,
-      actualDoses: json['actualDoses'] as int? ?? 0,
-      hasAlarmSigns: json['hasAlarmSigns'] as bool? ?? false,
-      hasLowLevels: json['hasLowLevels'] as bool? ?? false,
-      logsCount24h: json['logsCount24h'] as int? ?? 0,
+      expectedDoses: _toInt(json['expectedDoses']),
+      actualDoses: _toInt(json['actualDoses']),
+      hasAlarmSigns: json['hasAlarmSigns'] == true,
+      hasLowLevels: json['hasLowLevels'] == true || json['hasFever'] == true,
+      logsCount24h: _toInt(json['logsCount24h']),
     );
+  }
+
+  static int _toInt(dynamic val, [int defaultValue = 0]) {
+    if (val == null) return defaultValue;
+    if (val is num) return val.toInt();
+    if (val is String) return int.tryParse(val) ?? defaultValue;
+    return defaultValue;
   }
 }
 
@@ -50,12 +57,12 @@ class DashboardItemModel {
 
   factory DashboardItemModel.fromJson(Map<String, dynamic> json) {
     return DashboardItemModel(
-      treatmentId: json['treatmentId'] as String,
+      treatmentId: json['treatmentId'] as String? ?? '',
       pet: PetModel.fromJson(json['pet'] as Map<String, dynamic>),
-      diagnosis: json['diagnosis'] as String,
-      startDate: DateTime.parse(json['startDate'] as String),
-      priority: json['priority'] as String,
-      stats: DashboardStats.fromJson(json['stats'] as Map<String, dynamic>),
+      diagnosis: json['diagnosis'] as String? ?? '',
+      startDate: DateTime.tryParse(json['startDate']?.toString() ?? '') ?? DateTime.now(),
+      priority: json['priority'] as String? ?? 'GREEN',
+      stats: DashboardStats.fromJson(json['stats'] as Map<String, dynamic>? ?? {}),
       recentLogs: json['recentLogs'] as List<dynamic>? ?? [],
     );
   }

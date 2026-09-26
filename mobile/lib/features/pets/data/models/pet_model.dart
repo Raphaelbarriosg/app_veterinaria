@@ -27,17 +27,24 @@ class PetModel {
 
   factory PetModel.fromJson(Map<String, dynamic> json) {
     return PetModel(
-      id: json['id'] as String,
-      ownerId: json['ownerId'] as String,
-      name: json['name'] as String,
-      species: json['species'] as String,
+      id: json['id'] as String? ?? '',
+      ownerId: json['ownerId'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      species: json['species'] as String? ?? 'OTHER',
       breed: json['breed'] as String?,
-      weight: json['weight'] != null ? (json['weight'] as num).toDouble() : null,
-      birthDate: json['birthDate'] != null ? DateTime.parse(json['birthDate'] as String) : null,
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt'] as String) : null,
+      weight: _toDouble(json['weight']),
+      birthDate: json['birthDate'] != null ? DateTime.tryParse(json['birthDate'].toString()) : null,
+      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
       owner: json['owner'] != null ? UserModel.fromJson(json['owner'] as Map<String, dynamic>) : null,
       treatments: json['treatments'] as List<dynamic>?,
     );
+  }
+
+  static double? _toDouble(dynamic val) {
+    if (val == null) return null;
+    if (val is num) return val.toDouble();
+    if (val is String) return double.tryParse(val);
+    return null;
   }
 
   Map<String, dynamic> toJson() {
