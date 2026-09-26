@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Mobile</string>
+	<string>VetCare</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -66,5 +66,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>VetCare requiere acceso a la cámara para tomar fotografías de la evolución post-operatoria y escanear códigos QR.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>VetCare requiere acceso a tu galería de fotos para adjuntar imágenes a los reportes de evolución diaria.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>VetCare requiere acceso al micrófono para capturar videos de la evolución si es necesario.</string>
 </dict>
 </plist>
