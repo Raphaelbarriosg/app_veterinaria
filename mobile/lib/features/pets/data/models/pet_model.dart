@@ -27,11 +27,11 @@ class PetModel {
 
   factory PetModel.fromJson(Map<String, dynamic> json) {
     return PetModel(
-      id: json['id'] as String? ?? '',
-      ownerId: json['ownerId'] as String? ?? '',
-      name: json['name'] as String? ?? '',
-      species: json['species'] as String? ?? 'OTHER',
-      breed: json['breed'] as String?,
+      id: json['id']?.toString() ?? '',
+      ownerId: json['ownerId']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      species: json['species']?.toString() ?? 'OTHER',
+      breed: json['breed']?.toString(),
       weight: _toDouble(json['weight']),
       birthDate: json['birthDate'] != null ? DateTime.tryParse(json['birthDate'].toString()) : null,
       createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,

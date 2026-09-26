@@ -197,7 +197,7 @@ class _PetDetailPageState extends State<PetDetailPage> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    activeTreatment['diagnosis'] as String,
+                                    activeTreatment['diagnosis']?.toString() ?? 'Tratamiento Activo',
                                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                   ),
                                 ),
@@ -205,7 +205,7 @@ class _PetDetailPageState extends State<PetDetailPage> {
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              'Iniciado el: ${_formatIsoDate(activeTreatment['startDate'] as String)}',
+                              'Iniciado el: ${_formatIsoDate(activeTreatment['startDate']?.toString())}',
                               style: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
                             ),
                             const SizedBox(height: 24),
@@ -217,7 +217,7 @@ class _PetDetailPageState extends State<PetDetailPage> {
                               onPressed: () {
                                 Navigator.of(context).pushNamed(
                                   '/daily-log-form',
-                                  arguments: activeTreatment['id'] as String,
+                                  arguments: activeTreatment['id']?.toString() ?? '',
                                 ).then((_) {
                                   if (!context.mounted) return;
                                   context.read<PetsBloc>().add(LoadPetDetail(widget.petId));
@@ -237,7 +237,7 @@ class _PetDetailPageState extends State<PetDetailPage> {
                               onPressed: () {
                                 Navigator.of(context).pushNamed(
                                   '/daily-logs-history',
-                                  arguments: activeTreatment['id'] as String,
+                                  arguments: activeTreatment['id']?.toString() ?? '',
                                 );
                               },
                               icon: const Icon(Icons.history_rounded),
@@ -318,8 +318,10 @@ class _PetDetailPageState extends State<PetDetailPage> {
     );
   }
 
-  String _formatIsoDate(String isoString) {
-    final parsed = DateTime.parse(isoString);
-    return '${parsed.day}/${parsed.month}/${parsed.year}';
+  String _formatIsoDate(String? isoString) {
+    if (isoString == null || isoString.isEmpty) return 'N/A';
+    final parsed = DateTime.tryParse(isoString);
+    if (parsed == null) return 'N/A';
+    return '${parsed.day.toString().padLeft(2, '0')}/${parsed.month.toString().padLeft(2, '0')}/${parsed.year}';
   }
 }

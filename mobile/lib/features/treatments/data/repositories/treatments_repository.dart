@@ -57,11 +57,13 @@ class DashboardItemModel {
 
   factory DashboardItemModel.fromJson(Map<String, dynamic> json) {
     return DashboardItemModel(
-      treatmentId: json['treatmentId'] as String? ?? '',
-      pet: PetModel.fromJson(json['pet'] as Map<String, dynamic>),
-      diagnosis: json['diagnosis'] as String? ?? '',
+      treatmentId: json['treatmentId']?.toString() ?? '',
+      pet: json['pet'] != null
+          ? PetModel.fromJson(json['pet'] as Map<String, dynamic>)
+          : const PetModel(id: '', ownerId: '', name: 'Mascota', species: 'OTHER'),
+      diagnosis: json['diagnosis']?.toString() ?? '',
       startDate: DateTime.tryParse(json['startDate']?.toString() ?? '') ?? DateTime.now(),
-      priority: json['priority'] as String? ?? 'GREEN',
+      priority: json['priority']?.toString() ?? 'GREEN',
       stats: DashboardStats.fromJson(json['stats'] as Map<String, dynamic>? ?? {}),
       recentLogs: json['recentLogs'] as List<dynamic>? ?? [],
     );

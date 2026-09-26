@@ -27,17 +27,17 @@ class DailyLogModel {
 
   factory DailyLogModel.fromJson(Map<String, dynamic> json) {
     return DailyLogModel(
-      id: json['id'] as String? ?? '',
-      treatmentId: json['treatmentId'] as String? ?? '',
+      id: json['id']?.toString() ?? '',
+      treatmentId: json['treatmentId']?.toString() ?? '',
       registeredAt: DateTime.tryParse(json['registeredAt']?.toString() ?? '') ?? DateTime.now(),
       medicineTaken: json['medicineTaken'] == true,
       appetiteLevel: _toInt(json['appetiteLevel'], 5),
       energyLevel: _toInt(json['energyLevel'], 5),
       painLevel: _toIntOrNull(json['painLevel']),
       temperature: _toDouble(json['temperature']),
-      alarmSigns: json['alarmSigns'] as String?,
-      observations: json['observations'] as String?,
-      imageUrl: json['imageUrl'] as String?,
+      alarmSigns: json['alarmSigns']?.toString(),
+      observations: json['observations']?.toString(),
+      imageUrl: json['imageUrl']?.toString(),
     );
   }
 

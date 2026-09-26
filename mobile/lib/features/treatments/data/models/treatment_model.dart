@@ -20,9 +20,9 @@ class TreatmentRuleModel {
 
   factory TreatmentRuleModel.fromJson(Map<String, dynamic> json) {
     return TreatmentRuleModel(
-      id: json['id'] as String? ?? '',
-      treatmentId: json['treatmentId'] as String? ?? '',
-      medicineName: json['medicineName'] as String? ?? '',
+      id: json['id']?.toString() ?? '',
+      treatmentId: json['treatmentId']?.toString() ?? '',
+      medicineName: json['medicineName']?.toString() ?? '',
       dosage: json['dosage']?.toString() ?? '',
       frequencyHours: _toInt(json['frequencyHours'], 8),
       requirePhoto: json['requirePhoto'] == true,
@@ -80,13 +80,13 @@ class TreatmentModel {
   factory TreatmentModel.fromJson(Map<String, dynamic> json) {
     final rulesJson = json['rules'] as List<dynamic>? ?? [];
     return TreatmentModel(
-      id: json['id'] as String? ?? '',
-      vetId: json['vetId'] as String? ?? '',
-      petId: json['petId'] as String? ?? '',
-      diagnosis: json['diagnosis'] as String? ?? '',
+      id: json['id']?.toString() ?? '',
+      vetId: json['vetId']?.toString() ?? '',
+      petId: json['petId']?.toString() ?? '',
+      diagnosis: json['diagnosis']?.toString() ?? '',
       startDate: DateTime.tryParse(json['startDate']?.toString() ?? '') ?? DateTime.now(),
       endDate: json['endDate'] != null ? DateTime.tryParse(json['endDate'].toString()) : null,
-      status: json['status'] as String? ?? 'ACTIVE',
+      status: json['status']?.toString() ?? 'ACTIVE',
       createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
       rules: rulesJson.map((r) => TreatmentRuleModel.fromJson(r as Map<String, dynamic>)).toList(),
       pet: json['pet'] != null ? PetModel.fromJson(json['pet'] as Map<String, dynamic>) : null,
