@@ -15,7 +15,7 @@ Este documento centraliza el avance actual, la arquitectura técnica y el estado
 | **Health Check** | Render API | [/api/v1/health](https://vetcare-backend-vxua.onrender.com/api/v1/health) | 🟢 `{"status":"ok","environment":"production"}` |
 | **API Docs (Swagger)** | Render Docs | [/api/docs](https://vetcare-backend-vxua.onrender.com/api/docs) | 🟢 **Swagger UI 11.x Activo** |
 | **Base de Datos** | **Supabase** | `aws-1-us-east-2.pooler.supabase.com:6543` | 🟢 **PostgreSQL 17+ (Pooler + Direct)** |
-| **App Móvil (Android APK)** | **GitHub Actions** | [Artifact Run #36205297762 (v1.0.0+2)](https://github.com/Raphaelbarriosg/app_veterinaria/actions/runs/36205297762) | 🟢 **APK Compilado (~32.6 MB)** |
+| **App Móvil (Android APK)** | **GitHub Actions** | [Artifact Run #36206890006 (v1.0.0+3)](https://github.com/Raphaelbarriosg/app_veterinaria/actions/runs/36206890006) | 🟢 **APK Compilado (~32.6 MB)** |
 
 ---
 
@@ -310,7 +310,8 @@ flutter run --dart-define=API_BASE_URL=http://192.168.16.107:3000/api/v1
   - **Flujo de Autenticación E2E y Semáforo Clínico**: Verificado en vivo en la nube mediante navegador automatizado.
 - [x] **Compilación Automatizada de la App Móvil en la Nube** 📱:
   - Pipeline de GitHub Actions con Java 17 + Flutter estable para generar el release APK sin consumir recursos locales.
-  - Artefacto generado y listo para instalar: `vetcare-app-release` (~32.6 MB) en [GitHub Actions Run #36205297762 (v1.0.0+2)](https://github.com/Raphaelbarriosg/app_veterinaria/actions/runs/36205297762).
+  - Artefacto generado y listo para instalar: `vetcare-app-release` (~32.6 MB) en [GitHub Actions Run #36206890006 (v1.0.0+3)](https://github.com/Raphaelbarriosg/app_veterinaria/actions/runs/36206890006).
+  - Resuelto casteo de tipos null en deserialización JSON (`UserModel.fromJson`, `TreatmentModel.fromJson`, etc.).
   - App móvil pre-configurada para apuntar al backend en la nube con timeouts de 30 segundos.
   - `PushNotificationService` conectado al ciclo de autenticación en `AuthBloc`.
 
