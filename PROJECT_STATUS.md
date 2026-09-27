@@ -1,6 +1,6 @@
 # Estado del Proyecto — VetCare SaaS Multi-Tenant
 
-> Última actualización: 26 de septiembre de 2026
+> Última actualización: 27 de septiembre de 2026
 
 Este documento centraliza el avance actual, la arquitectura técnica y el estado real del ecosistema VetCare.
 
@@ -15,7 +15,7 @@ Este documento centraliza el avance actual, la arquitectura técnica y el estado
 | **Health Check** | Render API | [/api/v1/health](https://vetcare-backend-vxua.onrender.com/api/v1/health) | 🟢 `{"status":"ok","environment":"production"}` |
 | **API Docs (Swagger)** | Render Docs | [/api/docs](https://vetcare-backend-vxua.onrender.com/api/docs) | 🟢 **Swagger UI 11.x Activo** |
 | **Base de Datos** | **Supabase** | `aws-1-us-east-2.pooler.supabase.com:6543` | 🟢 **PostgreSQL 17+ (Pooler + Direct)** |
-| **App Móvil (Android APK)** | **GitHub Actions** | [Artifact v1.0.0+7 en progreso](https://github.com/Raphaelbarriosg/app_veterinaria/actions) | 🟡 **Compilando (v1.0.0+7 - Flujo Clínico de Tutores)** |
+| **App Móvil (Android APK)** | **GitHub Actions** | [Artifact v1.0.0+8 en GitHub Actions](https://github.com/Raphaelbarriosg/app_veterinaria/actions/runs/36328942065) | 🟢 **Compilado y Disponible (v1.0.0+8 - Fecha de Intervención y Validación)** |
 
 ---
 
@@ -325,7 +325,16 @@ flutter run --dart-define=API_BASE_URL=http://192.168.16.107:3000/api/v1
     - **Nueva Pestaña "Pacientes" en VetHomePage**: Directorio clínico de tutores con vista expandible de sus mascotas, búsqueda rápida, registro de nuevos tutores y acceso directo a "Iniciar Tratamiento".
     - **Crear Tratamiento Rediseñado (`CreateTreatmentPage`)**: Flujo intuitivo en dos pasos (Buscar/Registrar Tutor → Seleccionar Mascota del Tutor → Prescribir).
     - **Registro de Mascota Clínico (`PetFormPage`)**: Soporte para registrar mascotas directamente asignadas a un tutor con badge informativo.
-    - **Claridad de Roles en Registro (`RegisterPage`)**: Mensaje dinámico explicativo según el rol para evitar registros erróneos de veterinarios como dueños.
+- [x] **Fecha de Intervención y Validación de Culminación (v1.0.0+8)** 📅:
+  - **App Móvil (Flutter)**:
+    - **Selector de Fecha de Intervención / Inicio**: El veterinario ahora puede seleccionar explícitamente el día de la cirugía / inicio de tratamiento con un date picker intuitivo (anteriormente la fecha estaba fija como oculta).
+    - **Selector de Tipo de Procedimiento**: Se añadió el desplegable de opciones quirúrgicas (`GENERAL_SURGERY`, `CASTRATION_MALE`, `OVARIOHYSTERECTOMY`, `ORTHOPEDIC_FRACTURE`, etc.) en sincronía con el modelo web.
+    - **Validación Estricta de Fecha de Culminación**: En la app móvil, el date picker de culminación no permite seleccionar fechas anteriores a la de intervención (`firstDate: _startDate`). Si el usuario cambia la fecha de intervención a una posterior, se reajusta automáticamente o se muestra alerta visual y bloqueo de envío.
+    - **Botón de Limpieza de Fecha de Culminación**: Permite desmarcar la fecha de fin fácilmente con un toque en la cruz si el tratamiento es de duración abierta.
+  - **Backend API**:
+    - Validación defensiva añadida en `TreatmentsService`: si `endDate < startDate`, se arroja `BadRequestException` (`'La fecha de culminación no puede ser anterior a la fecha de inicio / intervención'`).
+  - **Frontend Web (Next.js)**:
+    - Validación idéntica en modal de nuevo tratamiento (`min={startDate}` y validación de fecha en Zod schema y submit handler).
 
 ### Próximos Pasos Sugeridos
 - [ ] **Credenciales de Firebase Cloud Messaging (FCM)** — configuración de `google-services.json` para entrega de notificaciones push en producción (actualmente opera en modo Dry-Run en backend).
