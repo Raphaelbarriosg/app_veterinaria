@@ -109,6 +109,11 @@ function CreateTreatmentModal({
         requirePhoto,
       }));
 
+    if (endDate && new Date(endDate) < new Date(startDate)) {
+      setToast({ message: 'La fecha de culminación no puede ser anterior a la fecha de intervención / inicio', type: 'error' });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await api.post('/treatments', {
@@ -191,7 +196,7 @@ function CreateTreatmentModal({
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
             <div className="form-field">
-              <label className="form-label" htmlFor="tx-start-date">Fecha de Inicio *</label>
+              <label className="form-label" htmlFor="tx-start-date">Fecha de Intervención / Inicio *</label>
               <input
                 id="tx-start-date"
                 type="date"
@@ -202,11 +207,11 @@ function CreateTreatmentModal({
               />
             </div>
             <div className="form-field">
-              <label className="form-label" htmlFor="tx-end-date">Fecha Fin (Opcional)</label>
-
+              <label className="form-label" htmlFor="tx-end-date">Fecha de Culminación (Opcional)</label>
               <input
                 id="tx-end-date"
                 type="date"
+                min={startDate}
                 className="form-input"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}

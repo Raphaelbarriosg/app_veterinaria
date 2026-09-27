@@ -36,6 +36,7 @@ class LoadTreatmentDetail extends TreatmentsEvent {
 class CreateTreatmentRequested extends TreatmentsEvent {
   final String petId;
   final String diagnosis;
+  final String? procedureType;
   final DateTime startDate;
   final DateTime? endDate;
   final List<Map<String, dynamic>> rules;
@@ -43,13 +44,14 @@ class CreateTreatmentRequested extends TreatmentsEvent {
   const CreateTreatmentRequested({
     required this.petId,
     required this.diagnosis,
+    this.procedureType,
     required this.startDate,
     this.endDate,
     required this.rules,
   });
 
   @override
-  List<Object?> get props => [petId, diagnosis, startDate, endDate, rules];
+  List<Object?> get props => [petId, diagnosis, procedureType, startDate, endDate, rules];
 }
 
 class UpdateTreatmentRequested extends TreatmentsEvent {

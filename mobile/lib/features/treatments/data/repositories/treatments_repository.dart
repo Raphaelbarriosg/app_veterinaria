@@ -114,6 +114,7 @@ class TreatmentsRepository {
   Future<TreatmentModel> createTreatment({
     required String petId,
     required String diagnosis,
+    String? procedureType,
     required DateTime startDate,
     DateTime? endDate,
     required List<Map<String, dynamic>> rules,
@@ -123,6 +124,7 @@ class TreatmentsRepository {
       data: {
         'petId': petId,
         'diagnosis': diagnosis,
+        if (procedureType != null && procedureType.isNotEmpty) 'procedureType': procedureType,
         'startDate': startDate.toIso8601String(),
         if (endDate != null) 'endDate': endDate.toIso8601String(),
         'rules': rules,

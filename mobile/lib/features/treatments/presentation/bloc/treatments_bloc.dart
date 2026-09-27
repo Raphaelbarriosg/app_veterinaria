@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/repositories/treatments_repository.dart';
 import 'treatments_event.dart';
@@ -61,12 +62,25 @@ class TreatmentsBloc extends Bloc<TreatmentsEvent, TreatmentsState> {
       await _treatmentsRepository.createTreatment(
         petId: event.petId,
         diagnosis: event.diagnosis,
+        procedureType: event.procedureType,
         startDate: event.startDate,
         endDate: event.endDate,
         rules: event.rules,
       );
       emit(const TreatmentOperationSuccess('Tratamiento creado con éxito'));
     } catch (e) {
+      if (e is DioException) {
+        final data = e.response?.data;
+        if (data is Map && data['message'] != null) {
+          final msg = data['message'];
+          if (msg is List) {
+            emit(TreatmentsError(msg.join(', ')));
+            return;
+          }
+          emit(TreatmentsError(msg.toString()));
+          return;
+        }
+      }
       emit(TreatmentsError('Error al crear tratamiento: ${e.toString()}'));
     }
   }

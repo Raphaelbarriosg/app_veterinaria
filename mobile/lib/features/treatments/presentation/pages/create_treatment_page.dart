@@ -44,8 +44,23 @@ class _CreateTreatmentPageState extends State<CreateTreatmentPage> {
   // Modo de selección: 0 = Por Tutor (recomendado), 1 = Por Nombre Mascota
   int _selectionMode = 0;
 
-  final DateTime _startDate = DateTime.now();
+  DateTime _startDate = DateTime.now();
   DateTime? _endDate;
+  String _selectedProcedureType = 'GENERAL_SURGERY';
+
+  final List<Map<String, String>> _procedureOptions = const [
+    {'value': 'GENERAL_SURGERY', 'label': 'Cirugía General'},
+    {'value': 'CASTRATION_MALE', 'label': 'Castración (Macho)'},
+    {'value': 'OVARIOHYSTERECTOMY', 'label': 'Ovariohisterectomía (OVH)'},
+    {'value': 'ORTHOPEDIC_FRACTURE', 'label': 'Cirugía Ortopédica / Fractura'},
+    {'value': 'TUMOR_RESECTION', 'label': 'Resección de Tumor'},
+    {'value': 'DENTAL', 'label': 'Profilaxis / Cirugía Dental'},
+    {'value': 'GASTROENTEROLOGY', 'label': 'Cirugía Gastrointestinal'},
+    {'value': 'OPHTHALMOLOGY', 'label': 'Cirugía Ocular'},
+    {'value': 'DERMATOLOGY', 'label': 'Cirugía de Piel / Heridas'},
+    {'value': 'MEDICAL_TREATMENT', 'label': 'Tratamiento Médico'},
+    {'value': 'OTHER', 'label': 'Otro Procedimiento'},
+  ];
 
   final List<Map<String, dynamic>> _rules = [];
 
@@ -277,12 +292,46 @@ class _CreateTreatmentPageState extends State<CreateTreatmentPage> {
     });
   }
 
-  Future<void> _selectEndDate(BuildContext context) async {
+  Future<void> _selectStartDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _endDate ?? DateTime.now().add(const Duration(days: 7)),
-      firstDate: DateTime.now(),
+      initialDate: _startDate,
+      firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: AppTheme.primaryMint,
+              onPrimary: AppTheme.backgroundCharcoal,
+              surface: AppTheme.surfaceSlate,
+              onSurface: AppTheme.textLight,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        _startDate = picked;
+        if (_endDate != null && _endDate!.isBefore(_startDate)) {
+          _endDate = _startDate.add(const Duration(days: 7));
+        }
+      });
+    }
+  }
+
+  Future<void> _selectEndDate(BuildContext context) async {
+    final DateTime initial = (_endDate != null && !_endDate!.isBefore(_startDate))
+        ? _endDate!
+        : _startDate.add(const Duration(days: 7));
+
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: _startDate,
+      lastDate: _startDate.add(const Duration(days: 730)),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -312,6 +361,16 @@ class _CreateTreatmentPageState extends State<CreateTreatmentPage> {
       return;
     }
 
+    if (_endDate != null && _endDate!.isBefore(_startDate)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('La fecha de culminación no puede ser anterior a la fecha de intervención'),
+          backgroundColor: AppTheme.alertRed,
+        ),
+      );
+      return;
+    }
+
     if (_formKey.currentState!.validate()) {
       if (_rules.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -324,6 +383,7 @@ class _CreateTreatmentPageState extends State<CreateTreatmentPage> {
         CreateTreatmentRequested(
           petId: _selectedPet!.id,
           diagnosis: _diagnosisController.text.trim(),
+          procedureType: _selectedProcedureType,
           startDate: _startDate,
           endDate: _endDate,
           rules: _rules,
@@ -822,16 +882,16 @@ class _CreateTreatmentPageState extends State<CreateTreatmentPage> {
                   ],
                   const SizedBox(height: 24),
 
-                  // 2. DIAGNÓSTICO
+                  // 2. DIAGNÓSTICO Y FECHAS DE INTERVENCIÓN
                   const Text(
-                    '2. Diagnóstico Médico',
+                    '2. Diagnóstico e Intervención',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.primaryMint),
                   ),
                   const SizedBox(height: 12),
                   AuthTextField(
                     controller: _diagnosisController,
-                    labelText: 'Diagnóstico',
-                    hintText: 'Ej. Cirugía de ligamento cruzado en pata trasera izquierda.',
+                    labelText: 'Diagnóstico *',
+                    hintText: 'Ej. Fractura distal de fémur izq / Cirugía de ligamento',
                     prefixIcon: Icons.healing_outlined,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -840,37 +900,178 @@ class _CreateTreatmentPageState extends State<CreateTreatmentPage> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
 
-                  // 3. FECHAS
-                  GestureDetector(
-                    onTap: () => _selectEndDate(context),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: AppTheme.darkMetallic.withValues(alpha: 0.25),
+                  // Tipo de Procedimiento
+                  DropdownButtonFormField<String>(
+                    value: _selectedProcedureType,
+                    dropdownColor: AppTheme.surfaceSlate,
+                    style: const TextStyle(color: AppTheme.textLight, fontSize: 14),
+                    decoration: InputDecoration(
+                      labelText: 'Tipo de Procedimiento',
+                      prefixIcon: const Icon(Icons.medical_services_outlined, color: AppTheme.primaryMint),
+                      filled: true,
+                      fillColor: AppTheme.darkMetallic.withValues(alpha: 0.2),
+                      border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppTheme.darkMetallic, width: 1),
+                        borderSide: const BorderSide(color: AppTheme.darkMetallic),
                       ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.date_range_outlined, color: AppTheme.textMuted),
-                          const SizedBox(width: 12),
-                          Text(
-                            _endDate == null
-                                ? 'Establecer Fecha de Fin (Opcional)'
-                                : 'Finalización: ${_endDate!.day}/${_endDate!.month}/${_endDate!.year}',
-                            style: TextStyle(
-                              color: _endDate == null ? AppTheme.textMuted : AppTheme.textLight,
-                              fontSize: 16,
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppTheme.darkMetallic),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppTheme.primaryMint),
+                      ),
+                    ),
+                    items: _procedureOptions.map((opt) {
+                      return DropdownMenuItem<String>(
+                        value: opt['value'],
+                        child: Text(opt['label']!, overflow: TextOverflow.ellipsis),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) setState(() => _selectedProcedureType = val);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Fechas de Intervención y Culminación
+                  Row(
+                    children: [
+                      // Fecha de Intervención
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => _selectStartDate(context),
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.darkMetallic.withValues(alpha: 0.25),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppTheme.primaryMint.withValues(alpha: 0.4),
+                                width: 1.2,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Row(
+                                  children: [
+                                    Icon(Icons.event_available_rounded, color: AppTheme.primaryMint, size: 16),
+                                    SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        'Intervención *',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.primaryMint,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  '${_startDate.day.toString().padLeft(2, '0')}/${_startDate.month.toString().padLeft(2, '0')}/${_startDate.year}',
+                                  style: const TextStyle(
+                                    color: AppTheme.textLight,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          const Spacer(),
-                          const Icon(Icons.arrow_drop_down_rounded, color: AppTheme.textMuted),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      // Fecha de Culminación
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => _selectEndDate(context),
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.darkMetallic.withValues(alpha: 0.25),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: (_endDate != null && _endDate!.isBefore(_startDate))
+                                    ? AppTheme.alertRed
+                                    : AppTheme.darkMetallic,
+                                width: 1.2,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.event_busy_rounded,
+                                      color: _endDate != null ? AppTheme.textLight : AppTheme.textMuted,
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    const Expanded(
+                                      child: Text(
+                                        'Culminación',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppTheme.textMuted,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    if (_endDate != null)
+                                      GestureDetector(
+                                        onTap: () {
+                                          setState(() => _endDate = null);
+                                        },
+                                        child: const Icon(Icons.close_rounded, size: 16, color: AppTheme.textMuted),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  _endDate != null
+                                      ? '${_endDate!.day.toString().padLeft(2, '0')}/${_endDate!.month.toString().padLeft(2, '0')}/${_endDate!.year}'
+                                      : 'Sin fecha fin',
+                                  style: TextStyle(
+                                    color: _endDate != null ? AppTheme.textLight : AppTheme.textMuted,
+                                    fontWeight: _endDate != null ? FontWeight.bold : FontWeight.normal,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_endDate != null && _endDate!.isBefore(_startDate))
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8.0),
+                      child: Row(
+                        children: [
+                          Icon(Icons.error_outline_rounded, color: AppTheme.alertRed, size: 16),
+                          SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'La fecha de culminación no puede ser anterior a la de intervención',
+                              style: TextStyle(color: AppTheme.alertRed, fontSize: 12),
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                  ),
                   const SizedBox(height: 24),
 
                   // 4. AGREGAR REGLAS DE MEDICACIÓN

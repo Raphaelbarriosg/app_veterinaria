@@ -52,7 +52,16 @@ const treatmentSchema = z.object({
   startDate: z.string().min(1, 'Requerido'),
   endDate: z.string().optional().or(z.literal('')),
   rules: z.array(treatmentRuleSchema).optional(),
-});
+}).refine(
+  (data) => {
+    if (!data.endDate) return true;
+    return new Date(data.endDate) >= new Date(data.startDate);
+  },
+  {
+    message: 'La fecha de culminación no puede ser anterior a la de intervención',
+    path: ['endDate'],
+  }
+);
 
 type TreatmentForm = z.infer<typeof treatmentSchema>;
 
@@ -157,6 +166,7 @@ function CreateTreatmentModal({
     register,
     control,
     handleSubmit,
+    watch,
     formState: { isSubmitting, errors },
   } = useForm<TreatmentForm>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -219,14 +229,15 @@ function CreateTreatmentModal({
 
           <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="form-field">
-              <label className="form-label" htmlFor="startDate">Fecha de inicio *</label>
+              <label className="form-label" htmlFor="startDate">Fecha de Intervención / Inicio *</label>
               <input id="startDate" type="date" className="form-input" {...register('startDate')} />
               {errors.startDate && <span className="text-red-500 text-sm mt-1">{errors.startDate.message}</span>}
             </div>
 
             <div className="form-field">
-              <label className="form-label" htmlFor="endDate">Fecha de fin — opcional</label>
-              <input id="endDate" type="date" className="form-input" {...register('endDate')} />
+              <label className="form-label" htmlFor="endDate">Fecha de Culminación (Opcional)</label>
+              <input id="endDate" type="date" min={watch('startDate')} className="form-input" {...register('endDate')} />
+              {errors.endDate && <span className="text-red-500 text-sm mt-1">{errors.endDate.message}</span>}
             </div>
           </div>
 

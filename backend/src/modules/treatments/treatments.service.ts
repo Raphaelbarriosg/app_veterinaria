@@ -25,6 +25,13 @@ export class TreatmentsService {
     // Obtener clinicId de la mascota
     const clinicId = await this.getClinicIdFromPet(dto.petId);
 
+    const startDate = new Date(dto.startDate);
+    const endDate = dto.endDate ? new Date(dto.endDate) : undefined;
+
+    if (endDate && endDate < startDate) {
+      throw new BadRequestException('La fecha de culminación no puede ser anterior a la fecha de inicio / intervención');
+    }
+
     return this.prisma.treatment.create({
       data: {
         clinicId,
@@ -32,8 +39,8 @@ export class TreatmentsService {
         petId: dto.petId,
         diagnosis: dto.diagnosis,
         procedureType: dto.procedureType ?? 'OTHER',
-        startDate: new Date(dto.startDate),
-        endDate: dto.endDate ? new Date(dto.endDate) : undefined,
+        startDate,
+        endDate,
         rules: dto.rules
           ? {
               create: dto.rules.map((rule) => ({
