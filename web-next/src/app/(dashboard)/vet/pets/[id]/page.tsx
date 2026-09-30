@@ -49,6 +49,7 @@ const treatmentRuleSchema = z.object({
 
 const treatmentSchema = z.object({
   diagnosis: z.string().min(1, 'El diagnóstico es requerido'),
+  interventionDate: z.string().optional().or(z.literal('')),
   startDate: z.string().min(1, 'Requerido'),
   endDate: z.string().optional().or(z.literal('')),
   rules: z.array(treatmentRuleSchema).optional(),
@@ -58,7 +59,16 @@ const treatmentSchema = z.object({
     return new Date(data.endDate) >= new Date(data.startDate);
   },
   {
-    message: 'La fecha de culminación no puede ser anterior a la de intervención',
+    message: 'La fecha de fin no puede ser anterior a la fecha de inicio del tratamiento',
+    path: ['endDate'],
+  }
+).refine(
+  (data) => {
+    if (!data.endDate || !data.interventionDate) return true;
+    return new Date(data.endDate) >= new Date(data.interventionDate);
+  },
+  {
+    message: 'La fecha de fin no puede ser anterior a la fecha de cirugía / intervención',
     path: ['endDate'],
   }
 );
@@ -172,6 +182,7 @@ function CreateTreatmentModal({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(treatmentSchema) as any,
     defaultValues: {
+      interventionDate: new Date().toISOString().split('T')[0],
       startDate: new Date().toISOString().split('T')[0],
       rules: [{ medicineName: '', dosage: '', frequencyHours: 8, requirePhoto: false }],
     },
@@ -187,6 +198,7 @@ function CreateTreatmentModal({
       await api.post('/treatments', {
         ...data,
         petId,
+        interventionDate: data.interventionDate ? new Date(data.interventionDate).toISOString() : undefined,
         startDate: new Date(data.startDate).toISOString(),
         endDate: data.endDate ? new Date(data.endDate).toISOString() : undefined,
       });
@@ -227,15 +239,21 @@ function CreateTreatmentModal({
             {errors.diagnosis && <span className="text-red-500 text-sm mt-1">{errors.diagnosis.message}</span>}
           </div>
 
+          <div className="form-field" style={{ marginBottom: '0.75rem' }}>
+            <label className="form-label" htmlFor="interventionDate">1. Fecha de Cirugía / Intervención</label>
+            <input id="interventionDate" type="date" className="form-input" {...register('interventionDate')} />
+            {errors.interventionDate && <span className="text-red-500 text-sm mt-1">{errors.interventionDate.message}</span>}
+          </div>
+
           <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="form-field">
-              <label className="form-label" htmlFor="startDate">Fecha de Intervención / Inicio *</label>
+              <label className="form-label" htmlFor="startDate">2. Inicio de Tratamiento *</label>
               <input id="startDate" type="date" className="form-input" {...register('startDate')} />
               {errors.startDate && <span className="text-red-500 text-sm mt-1">{errors.startDate.message}</span>}
             </div>
 
             <div className="form-field">
-              <label className="form-label" htmlFor="endDate">Fecha de Culminación (Opcional)</label>
+              <label className="form-label" htmlFor="endDate">3. Fin de Tratamiento</label>
               <input id="endDate" type="date" min={watch('startDate')} className="form-input" {...register('endDate')} />
               {errors.endDate && <span className="text-red-500 text-sm mt-1">{errors.endDate.message}</span>}
             </div>

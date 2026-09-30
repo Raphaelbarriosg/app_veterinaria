@@ -40,7 +40,9 @@ class DashboardItemModel {
   final String treatmentId;
   final PetModel pet;
   final String diagnosis;
+  final DateTime? interventionDate;
   final DateTime startDate;
+  final DateTime? endDate;
   final String priority; // 'RED' | 'YELLOW' | 'GREEN'
   final DashboardStats stats;
   final List<dynamic> recentLogs;
@@ -49,7 +51,9 @@ class DashboardItemModel {
     required this.treatmentId,
     required this.pet,
     required this.diagnosis,
+    this.interventionDate,
     required this.startDate,
+    this.endDate,
     required this.priority,
     required this.stats,
     required this.recentLogs,
@@ -62,7 +66,9 @@ class DashboardItemModel {
           ? PetModel.fromJson(json['pet'] as Map<String, dynamic>)
           : const PetModel(id: '', ownerId: '', name: 'Mascota', species: 'OTHER'),
       diagnosis: json['diagnosis']?.toString() ?? '',
+      interventionDate: json['interventionDate'] != null ? DateTime.tryParse(json['interventionDate'].toString()) : null,
       startDate: DateTime.tryParse(json['startDate']?.toString() ?? '') ?? DateTime.now(),
+      endDate: json['endDate'] != null ? DateTime.tryParse(json['endDate'].toString()) : null,
       priority: json['priority']?.toString() ?? 'GREEN',
       stats: DashboardStats.fromJson(json['stats'] as Map<String, dynamic>? ?? {}),
       recentLogs: json['recentLogs'] as List<dynamic>? ?? [],
@@ -115,6 +121,7 @@ class TreatmentsRepository {
     required String petId,
     required String diagnosis,
     String? procedureType,
+    DateTime? interventionDate,
     required DateTime startDate,
     DateTime? endDate,
     required List<Map<String, dynamic>> rules,
@@ -125,6 +132,7 @@ class TreatmentsRepository {
         'petId': petId,
         'diagnosis': diagnosis,
         if (procedureType != null && procedureType.isNotEmpty) 'procedureType': procedureType,
+        if (interventionDate != null) 'interventionDate': interventionDate.toIso8601String(),
         'startDate': startDate.toIso8601String(),
         if (endDate != null) 'endDate': endDate.toIso8601String(),
         'rules': rules,
@@ -137,6 +145,8 @@ class TreatmentsRepository {
   Future<TreatmentModel> updateTreatment(
     String id, {
     String? diagnosis,
+    DateTime? interventionDate,
+    DateTime? startDate,
     DateTime? endDate,
     String? status,
   }) async {
@@ -144,6 +154,8 @@ class TreatmentsRepository {
       '${ApiConstants.treatments}/$id',
       data: {
         if (diagnosis != null) 'diagnosis': diagnosis,
+        if (interventionDate != null) 'interventionDate': interventionDate.toIso8601String(),
+        if (startDate != null) 'startDate': startDate.toIso8601String(),
         if (endDate != null) 'endDate': endDate.toIso8601String(),
         if (status != null) 'status': status,
       },

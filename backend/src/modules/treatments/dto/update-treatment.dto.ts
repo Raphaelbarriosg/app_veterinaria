@@ -13,6 +13,14 @@ export class UpdateTreatmentDto {
 
   @IsOptional()
   @IsDateString()
+  interventionDate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @IsOptional()
+  @IsDateString()
   endDate?: string;
 
   @IsOptional()

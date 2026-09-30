@@ -44,6 +44,7 @@ class _CreateTreatmentPageState extends State<CreateTreatmentPage> {
   // Modo de selección: 0 = Por Tutor (recomendado), 1 = Por Nombre Mascota
   int _selectionMode = 0;
 
+  DateTime? _interventionDate = DateTime.now();
   DateTime _startDate = DateTime.now();
   DateTime? _endDate;
   String _selectedProcedureType = 'GENERAL_SURGERY';
@@ -292,6 +293,34 @@ class _CreateTreatmentPageState extends State<CreateTreatmentPage> {
     });
   }
 
+  Future<void> _selectInterventionDate(BuildContext context) async {
+    final DateTime initial = _interventionDate ?? DateTime.now();
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: AppTheme.primaryMint,
+              onPrimary: AppTheme.backgroundCharcoal,
+              surface: AppTheme.surfaceSlate,
+              onSurface: AppTheme.textLight,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        _interventionDate = picked;
+      });
+    }
+  }
+
   Future<void> _selectStartDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -364,7 +393,17 @@ class _CreateTreatmentPageState extends State<CreateTreatmentPage> {
     if (_endDate != null && _endDate!.isBefore(_startDate)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('La fecha de culminación no puede ser anterior a la fecha de intervención'),
+          content: Text('La fecha de finalización no puede ser anterior a la fecha de inicio del tratamiento'),
+          backgroundColor: AppTheme.alertRed,
+        ),
+      );
+      return;
+    }
+
+    if (_interventionDate != null && _endDate != null && _endDate!.isBefore(_interventionDate!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('La fecha de finalización no puede ser anterior a la fecha de cirugía / intervención'),
           backgroundColor: AppTheme.alertRed,
         ),
       );
@@ -384,6 +423,7 @@ class _CreateTreatmentPageState extends State<CreateTreatmentPage> {
           petId: _selectedPet!.id,
           diagnosis: _diagnosisController.text.trim(),
           procedureType: _selectedProcedureType,
+          interventionDate: _interventionDate,
           startDate: _startDate,
           endDate: _endDate,
           rules: _rules,
@@ -937,10 +977,94 @@ class _CreateTreatmentPageState extends State<CreateTreatmentPage> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Fechas de Intervención y Culminación
+                  // FECHAS: 1. Cirugía/Intervención, 2. Inicio Tratamiento, 3. Fin Tratamiento
+                  const Text(
+                    'Fechas del Protocolo Clínico',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textMuted,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // 1. Fecha de Cirugía o Intervención Médica
+                  InkWell(
+                    onTap: () => _selectInterventionDate(context),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: AppTheme.darkMetallic.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _interventionDate != null
+                              ? AppTheme.primaryMint.withValues(alpha: 0.45)
+                              : AppTheme.darkMetallic,
+                          width: 1.2,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: (_interventionDate != null ? AppTheme.primaryMint : AppTheme.textMuted)
+                                  .withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.medical_services_rounded,
+                              color: _interventionDate != null ? AppTheme.primaryMint : AppTheme.textMuted,
+                              size: 18,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  '1. Fecha de Cirugía / Intervención',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.textLight,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  _interventionDate != null
+                                      ? '${_interventionDate!.day.toString().padLeft(2, '0')}/${_interventionDate!.month.toString().padLeft(2, '0')}/${_interventionDate!.year}'
+                                      : 'Sin intervención médica',
+                                  style: TextStyle(
+                                    color: _interventionDate != null ? AppTheme.primaryMint : AppTheme.textMuted,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (_interventionDate != null)
+                            IconButton(
+                              icon: const Icon(Icons.close_rounded, size: 18, color: AppTheme.textMuted),
+                              tooltip: 'Quitar fecha de intervención',
+                              onPressed: () => setState(() => _interventionDate = null),
+                            )
+                          else
+                            const Icon(Icons.calendar_today_rounded, size: 16, color: AppTheme.textMuted),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // 2. Inicio de Tratamiento y 3. Fin de Tratamiento (lado a lado)
                   Row(
                     children: [
-                      // Fecha de Intervención
+                      // 2. Fecha de Inicio de Tratamiento
                       Expanded(
                         child: InkWell(
                           onTap: () => _selectStartDate(context),
@@ -951,7 +1075,7 @@ class _CreateTreatmentPageState extends State<CreateTreatmentPage> {
                               color: AppTheme.darkMetallic.withValues(alpha: 0.25),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: AppTheme.primaryMint.withValues(alpha: 0.4),
+                                color: AppTheme.primaryMint.withValues(alpha: 0.45),
                                 width: 1.2,
                               ),
                             ),
@@ -960,11 +1084,11 @@ class _CreateTreatmentPageState extends State<CreateTreatmentPage> {
                               children: [
                                 const Row(
                                   children: [
-                                    Icon(Icons.event_available_rounded, color: AppTheme.primaryMint, size: 16),
+                                    Icon(Icons.play_circle_outline_rounded, color: AppTheme.primaryMint, size: 16),
                                     SizedBox(width: 6),
                                     Expanded(
                                       child: Text(
-                                        'Intervención *',
+                                        '2. Inicio Tratamiento *',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
@@ -990,7 +1114,8 @@ class _CreateTreatmentPageState extends State<CreateTreatmentPage> {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      // Fecha de Culminación
+
+                      // 3. Fecha de Finalización de Tratamiento
                       Expanded(
                         child: InkWell(
                           onTap: () => _selectEndDate(context),
@@ -1020,7 +1145,7 @@ class _CreateTreatmentPageState extends State<CreateTreatmentPage> {
                                     const SizedBox(width: 6),
                                     const Expanded(
                                       child: Text(
-                                        'Culminación',
+                                        '3. Fin Tratamiento',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600,
@@ -1056,6 +1181,34 @@ class _CreateTreatmentPageState extends State<CreateTreatmentPage> {
                       ),
                     ],
                   ),
+
+                  // Resumen / Timeline visual
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceSlate.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.timeline_rounded, size: 14, color: AppTheme.primaryMint),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              _interventionDate != null
+                                  ? 'Cirugía: ${_interventionDate!.day.toString().padLeft(2, '0')}/${_interventionDate!.month.toString().padLeft(2, '0')}  ➔  Tratamiento: ${_startDate.day.toString().padLeft(2, '0')}/${_startDate.month.toString().padLeft(2, '0')}${_endDate != null ? " al ${_endDate!.day.toString().padLeft(2, '0')}/${_endDate!.month.toString().padLeft(2, '0')}" : " (vigente)"}'
+                                  : 'Tratamiento: ${_startDate.day.toString().padLeft(2, '0')}/${_startDate.month.toString().padLeft(2, '0')}${_endDate != null ? " al ${_endDate!.day.toString().padLeft(2, '0')}/${_endDate!.month.toString().padLeft(2, '0')}" : " (vigente)"}',
+                              style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
                   if (_endDate != null && _endDate!.isBefore(_startDate))
                     const Padding(
                       padding: EdgeInsets.only(top: 8.0),
@@ -1065,7 +1218,23 @@ class _CreateTreatmentPageState extends State<CreateTreatmentPage> {
                           SizedBox(width: 6),
                           Expanded(
                             child: Text(
-                              'La fecha de culminación no puede ser anterior a la de intervención',
+                              'La fecha de finalización no puede ser anterior a la fecha de inicio del tratamiento',
+                              style: TextStyle(color: AppTheme.alertRed, fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (_interventionDate != null && _endDate != null && _endDate!.isBefore(_interventionDate!))
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8.0),
+                      child: Row(
+                        children: [
+                          Icon(Icons.error_outline_rounded, color: AppTheme.alertRed, size: 16),
+                          SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'La fecha de finalización no puede ser anterior a la fecha de cirugía / intervención',
                               style: TextStyle(color: AppTheme.alertRed, fontSize: 12),
                             ),
                           ),

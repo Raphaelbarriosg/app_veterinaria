@@ -118,7 +118,7 @@ class _TreatmentDetailPageState extends State<TreatmentDetailPage> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'Inicio: ${_formatDate(t.startDate)} ${t.endDate != null ? "• Fin: ${_formatDate(t.endDate!)}" : ""}',
+                                  '${t.interventionDate != null ? "Cirugía: ${_formatDate(t.interventionDate!)} • " : ""}Inicio: ${_formatDate(t.startDate)}${t.endDate != null ? " • Fin: ${_formatDate(t.endDate!)}" : ""}',
                                   style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
                                 ),
                               ],

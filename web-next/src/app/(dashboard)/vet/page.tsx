@@ -64,6 +64,7 @@ function CreateTreatmentModal({
 }) {
   const [diagnosis, setDiagnosis] = useState('');
   const [procedureType, setProcedureType] = useState('OTHER');
+  const [interventionDate, setInterventionDate] = useState(new Date().toISOString().split('T')[0]);
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState('');
   const [rules, setRules] = useState<
@@ -110,7 +111,12 @@ function CreateTreatmentModal({
       }));
 
     if (endDate && new Date(endDate) < new Date(startDate)) {
-      setToast({ message: 'La fecha de culminación no puede ser anterior a la fecha de intervención / inicio', type: 'error' });
+      setToast({ message: 'La fecha de fin no puede ser anterior a la fecha de inicio del tratamiento', type: 'error' });
+      return;
+    }
+
+    if (interventionDate && endDate && new Date(endDate) < new Date(interventionDate)) {
+      setToast({ message: 'La fecha de fin no puede ser anterior a la fecha de cirugía / intervención', type: 'error' });
       return;
     }
 
@@ -120,6 +126,7 @@ function CreateTreatmentModal({
         petId: pet.id,
         diagnosis,
         procedureType,
+        interventionDate: interventionDate ? new Date(interventionDate).toISOString() : undefined,
         startDate: new Date(startDate).toISOString(),
         endDate: endDate ? new Date(endDate).toISOString() : undefined,
         rules: validRules,
@@ -194,28 +201,41 @@ function CreateTreatmentModal({
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
-            <div className="form-field">
-              <label className="form-label" htmlFor="tx-start-date">Fecha de Intervención / Inicio *</label>
+          <div style={{ marginTop: '0.75rem' }}>
+            <div className="form-field" style={{ marginBottom: '0.75rem' }}>
+              <label className="form-label" htmlFor="tx-intervention-date">1. Fecha de Cirugía / Intervención</label>
               <input
-                id="tx-start-date"
+                id="tx-intervention-date"
                 type="date"
-                required
                 className="form-input"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                value={interventionDate}
+                onChange={(e) => setInterventionDate(e.target.value)}
               />
             </div>
-            <div className="form-field">
-              <label className="form-label" htmlFor="tx-end-date">Fecha de Culminación (Opcional)</label>
-              <input
-                id="tx-end-date"
-                type="date"
-                min={startDate}
-                className="form-input"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="form-field">
+                <label className="form-label" htmlFor="tx-start-date">2. Inicio de Tratamiento *</label>
+                <input
+                  id="tx-start-date"
+                  type="date"
+                  required
+                  className="form-input"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div className="form-field">
+                <label className="form-label" htmlFor="tx-end-date">3. Fin de Tratamiento</label>
+                <input
+                  id="tx-end-date"
+                  type="date"
+                  min={startDate}
+                  className="form-input"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
             </div>
           </div>
 

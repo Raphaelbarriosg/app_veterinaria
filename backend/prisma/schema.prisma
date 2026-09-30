@@ -300,6 +300,7 @@ model Treatment {
   notes         String?         @db.Text
   /// Tipo de procedimiento — define el protocolo y los signos a vigilar
   procedureType ProcedureType   @default(OTHER) @map("procedure_type")
+  interventionDate DateTime?    @map("intervention_date")
   startDate     DateTime        @map("start_date")
   endDate       DateTime?       @map("end_date")
   status        TreatmentStatus @default(ACTIVE)

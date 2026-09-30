@@ -53,6 +53,7 @@ class TreatmentModel {
   final String vetId;
   final String petId;
   final String diagnosis;
+  final DateTime? interventionDate;
   final DateTime startDate;
   final DateTime? endDate;
   final String status;
@@ -67,6 +68,7 @@ class TreatmentModel {
     required this.vetId,
     required this.petId,
     required this.diagnosis,
+    this.interventionDate,
     required this.startDate,
     this.endDate,
     required this.status,
@@ -84,6 +86,7 @@ class TreatmentModel {
       vetId: json['vetId']?.toString() ?? '',
       petId: json['petId']?.toString() ?? '',
       diagnosis: json['diagnosis']?.toString() ?? '',
+      interventionDate: json['interventionDate'] != null ? DateTime.tryParse(json['interventionDate'].toString()) : null,
       startDate: DateTime.tryParse(json['startDate']?.toString() ?? '') ?? DateTime.now(),
       endDate: json['endDate'] != null ? DateTime.tryParse(json['endDate'].toString()) : null,
       status: json['status']?.toString() ?? 'ACTIVE',
@@ -101,6 +104,7 @@ class TreatmentModel {
       'vetId': vetId,
       'petId': petId,
       'diagnosis': diagnosis,
+      'interventionDate': interventionDate?.toIso8601String(),
       'startDate': startDate.toIso8601String(),
       'endDate': endDate?.toIso8601String(),
       'status': status,

@@ -141,7 +141,7 @@ class _TreatmentsListPageState extends State<TreatmentsListPage> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    'Inicio: ${t.startDate.day}/${t.startDate.month}/${t.startDate.year}',
+                                    '${t.interventionDate != null ? "Cirugía: ${t.interventionDate!.day}/${t.interventionDate!.month}/${t.interventionDate!.year} • " : ""}Inicio: ${t.startDate.day}/${t.startDate.month}/${t.startDate.year}${t.endDate != null ? " • Fin: ${t.endDate!.day}/${t.endDate!.month}/${t.endDate!.year}" : ""}',
                                     style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
                                   ),
                                 ],

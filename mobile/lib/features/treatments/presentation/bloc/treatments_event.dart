@@ -37,6 +37,7 @@ class CreateTreatmentRequested extends TreatmentsEvent {
   final String petId;
   final String diagnosis;
   final String? procedureType;
+  final DateTime? interventionDate;
   final DateTime startDate;
   final DateTime? endDate;
   final List<Map<String, dynamic>> rules;
@@ -45,28 +46,33 @@ class CreateTreatmentRequested extends TreatmentsEvent {
     required this.petId,
     required this.diagnosis,
     this.procedureType,
+    this.interventionDate,
     required this.startDate,
     this.endDate,
     required this.rules,
   });
 
   @override
-  List<Object?> get props => [petId, diagnosis, procedureType, startDate, endDate, rules];
+  List<Object?> get props => [petId, diagnosis, procedureType, interventionDate, startDate, endDate, rules];
 }
 
 class UpdateTreatmentRequested extends TreatmentsEvent {
   final String id;
   final String? diagnosis;
+  final DateTime? interventionDate;
+  final DateTime? startDate;
   final DateTime? endDate;
   final String? status;
 
   const UpdateTreatmentRequested({
     required this.id,
     this.diagnosis,
+    this.interventionDate,
+    this.startDate,
     this.endDate,
     this.status,
   });
 
   @override
-  List<Object?> get props => [id, diagnosis, endDate, status];
+  List<Object?> get props => [id, diagnosis, interventionDate, startDate, endDate, status];
 }

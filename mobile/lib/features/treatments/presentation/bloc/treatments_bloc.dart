@@ -63,6 +63,7 @@ class TreatmentsBloc extends Bloc<TreatmentsEvent, TreatmentsState> {
         petId: event.petId,
         diagnosis: event.diagnosis,
         procedureType: event.procedureType,
+        interventionDate: event.interventionDate,
         startDate: event.startDate,
         endDate: event.endDate,
         rules: event.rules,
@@ -91,6 +92,8 @@ class TreatmentsBloc extends Bloc<TreatmentsEvent, TreatmentsState> {
       await _treatmentsRepository.updateTreatment(
         event.id,
         diagnosis: event.diagnosis,
+        interventionDate: event.interventionDate,
+        startDate: event.startDate,
         endDate: event.endDate,
         status: event.status,
       );

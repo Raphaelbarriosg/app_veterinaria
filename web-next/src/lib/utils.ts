@@ -57,6 +57,7 @@ export interface Pet {
 export interface Treatment {
   id: string;
   diagnosis: string;
+  interventionDate?: string;
   startDate: string;
   endDate?: string;
   status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'PAUSED';

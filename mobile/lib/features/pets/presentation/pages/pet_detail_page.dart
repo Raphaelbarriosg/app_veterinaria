@@ -205,7 +205,7 @@ class _PetDetailPageState extends State<PetDetailPage> {
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              'Iniciado el: ${_formatIsoDate(activeTreatment['startDate']?.toString())}',
+                              '${activeTreatment['interventionDate'] != null ? "Cirugía: ${_formatIsoDate(activeTreatment['interventionDate']?.toString())} • " : ""}Inicio: ${_formatIsoDate(activeTreatment['startDate']?.toString())}${activeTreatment['endDate'] != null ? " • Fin: ${_formatIsoDate(activeTreatment['endDate']?.toString())}" : ""}',
                               style: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
                             ),
                             const SizedBox(height: 24),

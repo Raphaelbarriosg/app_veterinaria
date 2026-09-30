@@ -27,9 +27,10 @@ export class TreatmentsService {
 
     const startDate = new Date(dto.startDate);
     const endDate = dto.endDate ? new Date(dto.endDate) : undefined;
+    const interventionDate = dto.interventionDate ? new Date(dto.interventionDate) : undefined;
 
     if (endDate && endDate < startDate) {
-      throw new BadRequestException('La fecha de culminación no puede ser anterior a la fecha de inicio / intervención');
+      throw new BadRequestException('La fecha de finalización no puede ser anterior a la fecha de inicio del tratamiento');
     }
 
     return this.prisma.treatment.create({
@@ -39,6 +40,7 @@ export class TreatmentsService {
         petId: dto.petId,
         diagnosis: dto.diagnosis,
         procedureType: dto.procedureType ?? 'OTHER',
+        interventionDate,
         startDate,
         endDate,
         rules: dto.rules
@@ -172,12 +174,28 @@ export class TreatmentsService {
       throw new ForbiddenException('Solo el veterinario que creó el tratamiento puede editarlo');
     }
 
+    const updateData: any = {};
+    if (dto.diagnosis !== undefined) updateData.diagnosis = dto.diagnosis;
+    if (dto.status !== undefined) updateData.status = dto.status;
+    if (dto.interventionDate !== undefined) {
+      updateData.interventionDate = dto.interventionDate ? new Date(dto.interventionDate) : null;
+    }
+    if (dto.startDate !== undefined) {
+      updateData.startDate = new Date(dto.startDate);
+    }
+    if (dto.endDate !== undefined) {
+      updateData.endDate = dto.endDate ? new Date(dto.endDate) : null;
+    }
+
+    const effectiveStart = updateData.startDate ?? treatment.startDate;
+    const effectiveEnd = updateData.endDate !== undefined ? updateData.endDate : treatment.endDate;
+    if (effectiveEnd && effectiveEnd < effectiveStart) {
+      throw new BadRequestException('La fecha de finalización no puede ser anterior a la fecha de inicio del tratamiento');
+    }
+
     return this.prisma.treatment.update({
       where: { id },
-      data: {
-        ...dto,
-        endDate: dto.endDate ? new Date(dto.endDate) : undefined,
-      },
+      data: updateData,
       include: { rules: true },
     });
   }
@@ -233,7 +251,8 @@ export class TreatmentsService {
       const hasLowAppetite = logs24h.some((log) => log.appetiteLevel <= 2);
 
       // Low energy is only a concern if the surgery was more than 3 days ago (otherwise rest is expected)
-      const daysSinceStart = (Date.now() - treatment.startDate.getTime()) / (24 * 60 * 60 * 1000);
+      const referenceDate = treatment.interventionDate ?? treatment.startDate;
+      const daysSinceStart = (Date.now() - referenceDate.getTime()) / (24 * 60 * 60 * 1000);
       const hasLowEnergyConcern = logs24h.some(
         (log) => log.energyLevel <= 2 && daysSinceStart > 3,
       );
@@ -260,7 +279,9 @@ export class TreatmentsService {
         pet: treatment.pet,
         diagnosis: treatment.diagnosis,
         procedureType: treatment.procedureType,
+        interventionDate: treatment.interventionDate,
         startDate: treatment.startDate,
+        endDate: treatment.endDate,
         priority,
         stats: {
           expectedDoses,

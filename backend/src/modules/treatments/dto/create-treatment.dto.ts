@@ -34,6 +34,10 @@ export class CreateTreatmentDto {
   @IsEnum(ProcedureType)
   procedureType?: ProcedureType;
 
+  @IsOptional()
+  @IsDateString()
+  interventionDate?: string;
+
   @IsDateString()
   startDate!: string;
 

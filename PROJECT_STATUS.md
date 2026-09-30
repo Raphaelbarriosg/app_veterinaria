@@ -1,6 +1,6 @@
 # Estado del Proyecto — VetCare SaaS Multi-Tenant
 
-> Última actualización: 27 de septiembre de 2026
+> Última actualización: 29 de septiembre de 2026
 
 Este documento centraliza el avance actual, la arquitectura técnica y el estado real del ecosistema VetCare.
 
@@ -15,7 +15,7 @@ Este documento centraliza el avance actual, la arquitectura técnica y el estado
 | **Health Check** | Render API | [/api/v1/health](https://vetcare-backend-vxua.onrender.com/api/v1/health) | 🟢 `{"status":"ok","environment":"production"}` |
 | **API Docs (Swagger)** | Render Docs | [/api/docs](https://vetcare-backend-vxua.onrender.com/api/docs) | 🟢 **Swagger UI 11.x Activo** |
 | **Base de Datos** | **Supabase** | `aws-1-us-east-2.pooler.supabase.com:6543` | 🟢 **PostgreSQL 17+ (Pooler + Direct)** |
-| **App Móvil (Android APK)** | **GitHub Actions** | [Artifact v1.0.0+8 en GitHub Actions](https://github.com/Raphaelbarriosg/app_veterinaria/actions/runs/36328942065) | 🟢 **Compilado y Disponible (v1.0.0+8 - Fecha de Intervención y Validación)** |
+| **App Móvil (Android APK)** | **GitHub Actions** | [Artifacts en GitHub Actions](https://github.com/Raphaelbarriosg/app_veterinaria/actions) | 🟢 **Disponible vía CI/CD (v1.0.0+9 - 3 Fechas Clínicas: Intervención, Inicio y Fin)** |
 
 ---
 
