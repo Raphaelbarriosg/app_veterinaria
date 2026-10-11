@@ -45,6 +45,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Toast } from '@/components/ui/toast';
 import { Spinner } from '@/components/ui/spinner';
+import { HomeCarePlan } from '@/components/home-care-plan';
 
 // ============================================
 // Daily Log Form Schema
@@ -851,8 +852,8 @@ function RecordMedicationModal({
 // ============================================
 // Treatment section for owner
 // ============================================
-function OwnerTreatmentCard({ treatment }: { treatment: Treatment }) {
-  const [activePanelTab, setActivePanelTab] = useState<'EVOLUCION' | 'MEDICACION' | 'PROTOCOLO' | 'CONTROLES' | 'ALTA'>('EVOLUCION');
+function OwnerTreatmentCard({ treatment, pet }: { treatment: Treatment; pet?: any }) {
+  const [activePanelTab, setActivePanelTab] = useState<'CUIDADOS' | 'EVOLUCION' | 'MEDICACION' | 'PROTOCOLO' | 'CONTROLES' | 'ALTA'>('CUIDADOS');
   const [showLogForm, setShowLogForm] = useState(false);
   const [editingLog, setEditingLog] = useState<DailyLog | undefined>(undefined);
   const [recordingMedLog, setRecordingMedLog] = useState<MedicationLog | null>(null);
@@ -930,13 +931,14 @@ function OwnerTreatmentCard({ treatment }: { treatment: Treatment }) {
         </div>
 
         {/* Tabs selector */}
-        <div style={{ display: 'flex', background: '#fafbfc', borderBottom: '1px solid #f1f5f9', padding: '0 1rem' }}>
-          {(['EVOLUCION', 'MEDICACION', 'PROTOCOLO', 'CONTROLES', 'ALTA'] as const).map((t) => {
+        <div style={{ display: 'flex', background: '#fafbfc', borderBottom: '1px solid #f1f5f9', padding: '0 1rem', overflowX: 'auto', gap: '4px' }}>
+          {(['CUIDADOS', 'EVOLUCION', 'MEDICACION', 'PROTOCOLO', 'CONTROLES', 'ALTA'] as const).map((t) => {
             const active = activePanelTab === t;
             const labels = {
+              CUIDADOS: '📋 Plan de Cuidados en Casa',
               EVOLUCION: 'Evolución Diaria',
               MEDICACION: 'Tomas de Medicación',
-              PROTOCOLO: 'Cuidados Post-Op',
+              PROTOCOLO: 'Signos de Alarma',
               CONTROLES: 'Próximos Controles',
               ALTA: 'Alta e Indicaciones',
             };
@@ -953,6 +955,7 @@ function OwnerTreatmentCard({ treatment }: { treatment: Treatment }) {
                   fontWeight: active ? 'bold' : 'normal',
                   fontSize: '0.85rem',
                   cursor: 'pointer',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 {labels[t]}
@@ -962,6 +965,21 @@ function OwnerTreatmentCard({ treatment }: { treatment: Treatment }) {
         </div>
 
         <div style={{ padding: '1.25rem' }}>
+
+          {/* TAB: CUIDADOS */}
+          {activePanelTab === 'CUIDADOS' && (
+            <div className="animate-fade-in" style={{ marginBottom: '1rem' }}>
+              <HomeCarePlan
+                treatment={treatment}
+                protocol={protocol}
+                dischargeSheet={dischargeSheet}
+                petName={pet?.name || 'Mascota'}
+                species={pet?.species ? translateSpecies(pet.species) : undefined}
+                breed={pet?.breed}
+                ownerName={pet?.owner?.name}
+              />
+            </div>
+          )}
 
           {/* TAB: EVOLUCION */}
           {activePanelTab === 'EVOLUCION' && (
@@ -1359,7 +1377,7 @@ export default function OwnerPetDetailPage({
         ) : (
           <div className="treatments-list">
             {treatments.map((t) => (
-              <OwnerTreatmentCard key={t.id} treatment={t} />
+              <OwnerTreatmentCard key={t.id} treatment={t} pet={pet} />
             ))}
           </div>
         )}

@@ -30,12 +30,13 @@ import {
 import { usePetById } from '@/hooks/use-pets';
 import { useDailyLogs } from '@/hooks/use-daily-logs';
 import { translateSpecies, formatDateString } from '@/lib/utils';
-import type { Treatment, DailyLog } from '@/lib/utils';
+import type { Treatment, DailyLog, PostOpProtocol, DischargeSheet } from '@/lib/utils';
 import { api, ApiError } from '@/lib/api-client';
 import useSWR from 'swr';
 import { Button } from '@/components/ui/button';
 import { Toast } from '@/components/ui/toast';
 import { Spinner } from '@/components/ui/spinner';
+import { HomeCarePlan } from '@/components/home-care-plan';
 
 // ============================================
 // Treatment Schema
@@ -418,21 +419,36 @@ function DailyLogCard({ log, onAddNote }: { log: DailyLog; onAddNote: (log: Dail
 function CreateProtocolModal({
   treatmentId,
   procedureType,
+  initialProtocol,
   onSuccess,
   onClose,
 }: {
   treatmentId: string;
   procedureType: string;
+  initialProtocol?: PostOpProtocol | null;
   onSuccess: () => void;
   onClose: () => void;
 }) {
-  const [signs, setSigns] = useState<{ sign: string; severity: 'CRITICAL' | 'HIGH' | 'MEDIUM'; description: string }[]>([
-    { sign: 'Sangrado en la herida', severity: 'HIGH', description: 'Goteo continuo de sangre en la sutura' },
-    { sign: 'Fiebre (>39.5°C)', severity: 'CRITICAL', description: 'Temperatura corporal elevada' },
-  ]);
-  const [restrictions, setRestrictions] = useState('Reposo estricto. Evitar correr y saltar.\nCollar isabelino puesto las 24 horas.');
-  const [specialCare, setSpecialCare] = useState('Limpieza diaria de la herida con suero fisiológico.\nOfrecer agua y comida blanda.');
-  const [emergencyCall, setEmergencyCall] = useState('+56 2 2345 6789 (Urgencias)');
+  const [signs, setSigns] = useState<{ sign: string; severity: 'CRITICAL' | 'HIGH' | 'MEDIUM'; description: string }[]>(
+    initialProtocol?.alarmSigns && initialProtocol.alarmSigns.length > 0
+      ? initialProtocol.alarmSigns.map(s => ({ sign: s.sign, severity: s.severity, description: s.description || '' }))
+      : [
+          { sign: 'Sangrado en la herida', severity: 'HIGH', description: 'Goteo continuo de sangre en la sutura' },
+          { sign: 'Fiebre (>39.5°C)', severity: 'CRITICAL', description: 'Temperatura corporal elevada' },
+          { sign: 'Apertura de sutura', severity: 'CRITICAL', description: 'Bordes de herida o puntos sueltos' },
+        ]
+  );
+  const [restrictions, setRestrictions] = useState(
+    initialProtocol?.restrictions && initialProtocol.restrictions.length > 0
+      ? initialProtocol.restrictions.join('\n')
+      : 'Reposo absoluto: Evitar saltar o correr durante los próximos 7 días.\nProtección: Uso obligatorio de collar isabelino o body quirúrgico para evitar el lamido.'
+  );
+  const [specialCare, setSpecialCare] = useState(
+    initialProtocol?.specialCare && initialProtocol.specialCare.length > 0
+      ? initialProtocol.specialCare.join('\n')
+      : 'Curación: Limpieza diaria suave de la herida con suero fisiológico y gasa estéril.\nAlimentación: Ofrecer comida blanda y agua fresca a libre disposición.'
+  );
+  const [emergencyCall, setEmergencyCall] = useState(initialProtocol?.emergencyCall || '+56 2 2345 6789 (Urgencias)');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
 
@@ -447,7 +463,7 @@ function CreateProtocolModal({
         specialCare: specialCare.split('\n').filter(c => c.trim()),
         emergencyCall,
       });
-      setToast({ message: 'Protocolo de cuidados definido correctamente', type: 'success' });
+      setToast({ message: 'Protocolo y cuidados guardados con éxito', type: 'success' });
       setTimeout(() => {
         onSuccess();
         onClose();
@@ -463,14 +479,39 @@ function CreateProtocolModal({
   return (
     <div className="modal-overlay" onClick={onClose}>
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-      <div className="modal-card wide-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+      <div className="modal-card wide-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '640px' }}>
         <div className="modal-header">
-          <h3 className="modal-title">Definir Protocolo de Cuidados</h3>
+          <h3 className="modal-title">Definir Plan de Cuidados en Casa y Protocolo</h3>
           <button className="modal-close" onClick={onClose}><X className="w-4 h-4" /></button>
         </div>
         <form onSubmit={handleSubmit} className="modal-form">
+          {/* Botones de Plantilla Rápida */}
+          <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#475569' }}>Cargar Plantilla:</span>
+            <button
+              type="button"
+              className="text-xs px-2.5 py-1 rounded bg-white border border-slate-200 hover:bg-slate-50 font-medium"
+              onClick={() => {
+                setRestrictions('Reposo absoluto: Evitar que el paciente salte o corra durante los próximos 7 días.\nProtección: Uso obligatorio de collar isabelino o body quirúrgico para evitar el lamido de la herida.');
+                setSpecialCare('Curación: Limpieza diaria de la herida con suero fisiológico y gasa estéril.\nAlimentación: Administrar el analgésico recetado con el alimento. Ofrecer comida blanda.');
+              }}
+            >
+              🐕 Estándar Post-Operatorio
+            </button>
+            <button
+              type="button"
+              className="text-xs px-2.5 py-1 rounded bg-white border border-slate-200 hover:bg-slate-50 font-medium"
+              onClick={() => {
+                setRestrictions('Reposo estricto en habitación pequeña o canil por 14 días.\nProhibido subir a muebles o escaleras.\nPaseos sanitarios solo con correa corta de máximo 5 minutos.');
+                setSpecialCare('Vendaje: Mantener vendaje o férula limpio y completamente seco.\nCuración: No manipular vendaje salvo autorización veterinaria.');
+              }}
+            >
+              🦴 Traumatología / Ortopedia
+            </button>
+          </div>
+
           <div className="form-field">
-            <label className="form-label">Signos de Alarma a Vigilar</label>
+            <label className="form-label">Signos de Alarma a Vigilar por el Tutor</label>
             {signs.map((s, idx) => (
               <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 2fr auto', gap: '8px', marginBottom: '6px' }}>
                 <input
@@ -528,27 +569,29 @@ function CreateProtocolModal({
           </div>
 
           <div className="form-field">
-            <label className="form-label">Restricciones (Una por línea)</label>
+            <label className="form-label">Restricciones de Reposo y Protección (Una por línea)</label>
             <textarea
               rows={3}
               className="form-textarea"
               value={restrictions}
               onChange={(e) => setRestrictions(e.target.value)}
+              placeholder="Ej: Reposo absoluto: Evitar saltar o correr por 7 días..."
             />
           </div>
 
           <div className="form-field">
-            <label className="form-label">Cuidados Especiales (Uno por línea)</label>
+            <label className="form-label">Cuidados Especiales y Alimentación (Uno por línea)</label>
             <textarea
               rows={3}
               className="form-textarea"
               value={specialCare}
               onChange={(e) => setSpecialCare(e.target.value)}
+              placeholder="Ej: Curación diaria con suero fisiológico..."
             />
           </div>
 
           <div className="form-field">
-            <label className="form-label">Teléfono de Emergencias</label>
+            <label className="form-label">Teléfono de Emergencias de la Clínica</label>
             <input
               type="text"
               className="form-input"
@@ -559,7 +602,7 @@ function CreateProtocolModal({
 
           <div className="modal-actions">
             <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-            <Button type="submit" disabled={isSubmitting}>Guardar Protocolo</Button>
+            <Button type="submit" disabled={isSubmitting}>Guardar Plan de Cuidados</Button>
           </div>
         </form>
       </div>
@@ -739,22 +782,43 @@ function CompleteControlModal({
 }
 
 function CreateDischargeModal({
-  treatmentId,
+  treatment,
+  existingDischarge,
   onSuccess,
   onClose,
 }: {
-  treatmentId: string;
+  treatment: Treatment;
+  existingDischarge?: DischargeSheet | null;
   onSuccess: () => void;
   onClose: () => void;
 }) {
-  const [summary, setSummary] = useState('');
-  const [nextSteps, setNextSteps] = useState('');
-  const [returnSigns, setReturnSigns] = useState('');
-  const [restrictions, setRestrictions] = useState('');
-  const [feedingNotes, setFeedingNotes] = useState('');
-  const [medications, setMedications] = useState<{ name: string; dosage: string; schedule: string; duration: string }[]>([
-    { name: '', dosage: '', schedule: '', duration: '' },
-  ]);
+  const [summary, setSummary] = useState(
+    existingDischarge?.summary || `Plan de cuidados y medicación post-operatoria para ${treatment.diagnosis}.`
+  );
+  const [nextSteps, setNextSteps] = useState(existingDischarge?.nextSteps || 'Control de herida y retiro de puntos en 10 días.');
+  const [returnSigns, setReturnSigns] = useState(existingDischarge?.returnSigns || 'Fiebre, sangrado persistente, decaimiento o separación de sutura.');
+  const [restrictions, setRestrictions] = useState(
+    existingDischarge?.restrictions || 'Reposo absoluto por 7 días. Evitar saltar, correr o subir escaleras. Uso obligatorio de collar isabelino.'
+  );
+  const [feedingNotes, setFeedingNotes] = useState(
+    existingDischarge?.feedingNotes || 'Dieta blanda y agua fresca a libre disposición. Administrar medicamentos con alimento.'
+  );
+  const [medications, setMedications] = useState<{ name: string; dosage: string; schedule: string; duration: string }[]>(() => {
+    if (existingDischarge?.medications && Array.isArray(existingDischarge.medications) && existingDischarge.medications.length > 0) {
+      return existingDischarge.medications;
+    }
+    if (treatment.rules && treatment.rules.length > 0) {
+      return treatment.rules.map(r => ({
+        name: r.medicineName,
+        dosage: r.dosage,
+        schedule: `Cada ${r.frequencyHours} hrs`,
+        duration: '7 días',
+      }));
+    }
+    return [{ name: '', dosage: '', schedule: '', duration: '' }];
+  });
+
+  const [markAsCompleted, setMarkAsCompleted] = useState(treatment.status === 'COMPLETED');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
 
@@ -766,7 +830,7 @@ function CreateDischargeModal({
     }
     setIsSubmitting(true);
     try {
-      await api.post(`/discharge-sheets/treatment/${treatmentId}`, {
+      await api.post(`/discharge-sheets/treatment/${treatment.id}`, {
         summary,
         nextSteps,
         returnSigns,
@@ -774,15 +838,18 @@ function CreateDischargeModal({
         feedingNotes,
         medications: medications.filter(m => m.name.trim()),
       });
-      // Finalizar también el tratamiento al dar el alta médica
-      await api.patch(`/treatments/${treatmentId}`, { status: 'COMPLETED' });
-      setToast({ message: 'Hoja de alta emitida y paciente dado de alta', type: 'success' });
+      if (markAsCompleted && treatment.status !== 'COMPLETED') {
+        await api.patch(`/treatments/${treatment.id}`, { status: 'COMPLETED' });
+        setToast({ message: 'Alta médica emitida y paciente dado de alta definitiva', type: 'success' });
+      } else {
+        setToast({ message: 'Récipe y Plan de Cuidados guardado con éxito', type: 'success' });
+      }
       setTimeout(() => {
         onSuccess();
         onClose();
       }, 1000);
     } catch (err) {
-      const msg = err instanceof ApiError ? err.message : 'Error al guardar alta';
+      const msg = err instanceof ApiError ? err.message : 'Error al guardar récipe/alta';
       setToast({ message: msg, type: 'error' });
     } finally {
       setIsSubmitting(false);
@@ -792,26 +859,44 @@ function CreateDischargeModal({
   return (
     <div className="modal-overlay" onClick={onClose}>
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-      <div className="modal-card wide-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+      <div className="modal-card wide-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '640px' }}>
         <div className="modal-header">
-          <h3 className="modal-title">Generar Alta Médica del Paciente</h3>
+          <h3 className="modal-title">Emitir Récipe y Plan de Cuidados / Alta Médica</h3>
           <button className="modal-close" onClick={onClose}><X className="w-4 h-4" /></button>
         </div>
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-field">
-            <label className="form-label">Resumen del Procedimiento Quirúrgico / Evolución *</label>
+            <label className="form-label">Resumen del Procedimiento / Diagnóstico *</label>
             <textarea
               className="form-textarea"
-              rows={3}
+              rows={2}
               required
-              placeholder="Ej. Paciente operado exitosamente. Retiro de puntos sin inconvenientes."
+              placeholder="Ej. Paciente intervenido satisfactoriamente. Indicaciones de recuperación en casa."
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
             />
           </div>
 
           <div className="form-field">
-            <label className="form-label">Medicamentos e Indicaciones Domiciliarias</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <label className="form-label" style={{ margin: 0 }}>Rp. Medicamentos Prescritos para Casa</label>
+              {treatment.rules && treatment.rules.length > 0 && (
+                <button
+                  type="button"
+                  className="text-xs text-emerald-600 hover:underline font-semibold"
+                  onClick={() => {
+                    setMedications(treatment.rules!.map(r => ({
+                      name: r.medicineName,
+                      dosage: r.dosage,
+                      schedule: `Cada ${r.frequencyHours} hrs`,
+                      duration: '7 días',
+                    })));
+                  }}
+                >
+                  ↺ Cargar reglas del tratamiento
+                </button>
+              )}
+            </div>
             {medications.map((m, idx) => (
               <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr auto', gap: '6px', marginBottom: '6px' }}>
                 <input
@@ -826,7 +911,7 @@ function CreateDischargeModal({
                 />
                 <input
                   className="form-input"
-                  placeholder="Dosis"
+                  placeholder="Dosis (ej. 0.5 ml)"
                   value={m.dosage}
                   onChange={(e) => {
                     const next = [...medications];
@@ -836,7 +921,7 @@ function CreateDischargeModal({
                 />
                 <input
                   className="form-input"
-                  placeholder="Horarios"
+                  placeholder="Horario (ej. Cada 24h)"
                   value={m.schedule}
                   onChange={(e) => {
                     const next = [...medications];
@@ -846,7 +931,7 @@ function CreateDischargeModal({
                 />
                 <input
                   className="form-input"
-                  placeholder="Días"
+                  placeholder="Duración (ej. 5 días)"
                   value={m.duration}
                   onChange={(e) => {
                     const next = [...medications];
@@ -881,7 +966,7 @@ function CreateDischargeModal({
               <textarea
                 rows={2}
                 className="form-textarea"
-                placeholder="Ej. Reposo por 5 días más"
+                placeholder="Ej. Reposo por 7 días, collar isabelino..."
                 value={restrictions}
                 onChange={(e) => setRestrictions(e.target.value)}
               />
@@ -891,16 +976,60 @@ function CreateDischargeModal({
               <textarea
                 rows={2}
                 className="form-textarea"
-                placeholder="Ej. Volver a dieta regular"
+                placeholder="Ej. Dieta blanda las primeras 48 horas..."
                 value={feedingNotes}
                 onChange={(e) => setFeedingNotes(e.target.value)}
               />
             </div>
           </div>
 
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div className="form-field">
+              <label className="form-label">Próximos Pasos / Retiro de Puntos</label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Ej. Control en 10 días para retiro de puntos"
+                value={nextSteps}
+                onChange={(e) => setNextSteps(e.target.value)}
+              />
+            </div>
+            <div className="form-field">
+              <label className="form-label">Signos de Alarma</label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Ej. Fiebre o sangrado en la herida"
+                value={returnSigns}
+                onChange={(e) => setReturnSigns(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Toggle para finalizar o mantener activo */}
+          <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', margin: '8px 0' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', cursor: 'pointer', color: '#1e293b' }}>
+              <input
+                type="checkbox"
+                checked={markAsCompleted}
+                onChange={(e) => setMarkAsCompleted(e.target.checked)}
+              />
+              <span style={{ fontWeight: markAsCompleted ? 'bold' : 'normal' }}>
+                Marcar tratamiento como Finalizado / Alta Médica Definitiva
+              </span>
+            </label>
+            <p style={{ margin: '4px 0 0 24px', fontSize: '0.75rem', color: '#64748b' }}>
+              {markAsCompleted
+                ? 'El tratamiento se marcará como completado y cerrará el seguimiento diario.'
+                : 'El paciente continuará activo en seguimiento y el tutor podrá ver su récipe y plan de cuidados en casa.'}
+            </p>
+          </div>
+
           <div className="modal-actions">
             <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-            <Button type="submit" disabled={isSubmitting}>Emitir Alta Médica</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {markAsCompleted ? 'Emitir Alta Médica Definitiva' : 'Guardar Récipe y Plan de Cuidados'}
+            </Button>
           </div>
         </form>
       </div>
@@ -921,12 +1050,14 @@ import { translateProcedureType, translateControlVisitType, translateControlVisi
 
 function TreatmentPanel({
   treatment,
+  pet,
   onAddNote,
 }: {
   treatment: Treatment;
+  pet?: any;
   onAddNote: (log: DailyLog) => void;
 }) {
-  const [activePanelTab, setActivePanelTab] = useState<'EVOLUCION' | 'MEDICACION' | 'CONTROLES' | 'PROTOCOLO' | 'ALTA'>('EVOLUCION');
+  const [activePanelTab, setActivePanelTab] = useState<'EVOLUCION' | 'MEDICACION' | 'CONTROLES' | 'CUIDADOS' | 'ALTA'>('EVOLUCION');
   const [page, setPage] = useState(1);
   const { logs, meta, isLoading: logsLoading, refresh: refreshLogs } = useDailyLogs(treatment.id, page);
 
@@ -984,6 +1115,7 @@ function TreatmentPanel({
         <CreateProtocolModal
           treatmentId={treatment.id}
           procedureType={treatment.procedureType}
+          initialProtocol={protocol}
           onSuccess={() => refreshProtocol()}
           onClose={() => setShowCreateProtocol(false)}
         />
@@ -991,10 +1123,10 @@ function TreatmentPanel({
 
       {showCreateDischarge && (
         <CreateDischargeModal
-          treatmentId={treatment.id}
+          treatment={treatment}
+          existingDischarge={dischargeSheet}
           onSuccess={() => {
             refreshDischargeSheet();
-            window.location.reload(); // Recargar para actualizar estado ACTIVE->COMPLETED
           }}
           onClose={() => setShowCreateDischarge(false)}
         />
@@ -1017,28 +1149,34 @@ function TreatmentPanel({
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span className={`status-badge ${sc.cls}`}>{sc.label}</span>
-            {treatment.status === 'ACTIVE' && (
-              <Button
-                size="sm"
-                onClick={() => setShowCreateDischarge(true)}
-                style={{ background: '#10b981', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-              >
-                <CheckCircle2 className="w-3.5 h-3.5" /> Alta Médica
-              </Button>
-            )}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowCreateProtocol(true)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+            >
+              <FileText className="w-3.5 h-3.5" /> Plan de Cuidados
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setShowCreateDischarge(true)}
+              style={{ background: '#10b981', display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#ffffff' }}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" /> {treatment.status === 'COMPLETED' ? 'Ver / Editar Alta' : 'Récipe / Alta'}
+            </Button>
           </div>
         </div>
       </div>
 
       {/* Panel Tabs Menu */}
-      <div style={{ display: 'flex', background: '#fafbfc', borderBottom: '1px solid #f1f5f9', padding: '0 1rem' }}>
-        {(['EVOLUCION', 'MEDICACION', 'CONTROLES', 'PROTOCOLO', 'ALTA'] as const).map((t) => {
+      <div style={{ display: 'flex', background: '#fafbfc', borderBottom: '1px solid #f1f5f9', padding: '0 1rem', overflowX: 'auto', gap: '4px' }}>
+        {(['EVOLUCION', 'MEDICACION', 'CONTROLES', 'CUIDADOS', 'ALTA'] as const).map((t) => {
           const active = activePanelTab === t;
           const labels = {
             EVOLUCION: 'Evolución Diaria',
             MEDICACION: 'Medicamentos y Dosis',
             CONTROLES: 'Citas de Control',
-            PROTOCOLO: 'Protocolo Post-Op',
+            CUIDADOS: '📋 Plan de Cuidados (Tutor)',
             ALTA: 'Alta e Indicaciones',
           };
           return (
@@ -1054,6 +1192,7 @@ function TreatmentPanel({
                 fontWeight: active ? 'bold' : 'normal',
                 fontSize: '0.85rem',
                 cursor: 'pointer',
+                whiteSpace: 'nowrap',
               }}
             >
               {labels[t]}
@@ -1226,62 +1365,21 @@ function TreatmentPanel({
           </div>
         )}
 
-        {/* PANEL: PROTOCOLO */}
-        {activePanelTab === 'PROTOCOLO' && (
-          <div>
-            {!protocol ? (
-              <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
-                <AlertTriangle className="w-8 h-8 text-slate-400 mb-2 style-inline" style={{ display: 'block', margin: '0 auto' }} />
-                <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '0.75rem' }}>No se ha definido el protocolo de cuidados para esta cirugía.</p>
-                {treatment.status === 'ACTIVE' && (
-                  <Button size="sm" onClick={() => setShowCreateProtocol(true)}>Definir Protocolo de Cuidados</Button>
-                )}
-              </div>
-            ) : (
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                  <h4 style={{ fontWeight: 'bold', fontSize: '0.9rem', color: '#1e293b' }}>Protocolo Clínico de Cuidados</h4>
-                  {treatment.status === 'ACTIVE' && (
-                    <Button size="sm" variant="outline" onClick={() => setShowCreateProtocol(true)}>Editar Protocolo</Button>
-                  )}
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '16px' }}>
-                  <div>
-                    <h5 style={{ fontWeight: 'bold', fontSize: '0.8rem', color: '#475569', marginBottom: '4px' }}>Señales de Alarma</h5>
-                    <div style={{ background: '#f8fafc', padding: '8px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                      {Array.isArray(protocol.alarmSigns) && protocol.alarmSigns.map((s, idx) => (
-                        <div key={idx} style={{ padding: '6px 0', borderBottom: idx < protocol.alarmSigns.length - 1 ? '1px solid #e2e8f0' : 'none', fontSize: '0.75rem' }}>
-                          <span style={{ fontWeight: 'bold', color: s.severity === 'CRITICAL' ? 'red' : s.severity === 'HIGH' ? 'orange' : 'inherit' }}>
-                            🚨 {s.sign} ({s.severity})
-                          </span>
-                          <p style={{ margin: '2px 0 0 16px', color: '#64748b' }}>{s.description}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h5 style={{ fontWeight: 'bold', fontSize: '0.8rem', color: '#475569', marginBottom: '4px' }}>Restricciones y Cuidados</h5>
-                    <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.75rem' }}>
-                      <strong>Restricciones:</strong>
-                      <ul style={{ margin: '4px 0 10px 16px', padding: 0 }}>
-                        {Array.isArray(protocol.restrictions) && protocol.restrictions.map((r, i) => <li key={i}>{r}</li>)}
-                      </ul>
-                      <strong>Cuidados Especiales:</strong>
-                      <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
-                        {Array.isArray(protocol.specialCare) && protocol.specialCare.map((c, i) => <li key={i}>{c}</li>)}
-                      </ul>
-                    </div>
-                    {protocol.emergencyCall && (
-                      <div style={{ marginTop: '8px', background: '#fef2f2', padding: '8px', borderRadius: '6px', border: '1px solid #fca5a5', fontSize: '0.75rem', color: '#991b1b', fontWeight: 'bold' }}>
-                        📞 Emergencia: {protocol.emergencyCall}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
+        {/* PANEL: CUIDADOS */}
+        {activePanelTab === 'CUIDADOS' && (
+          <div className="animate-fade-in" style={{ padding: '0.25rem 0' }}>
+            <HomeCarePlan
+              treatment={treatment}
+              protocol={protocol}
+              dischargeSheet={dischargeSheet}
+              petName={pet?.name || 'Mascota'}
+              species={pet?.species ? translateSpecies(pet.species) : undefined}
+              breed={pet?.breed}
+              ownerName={pet?.owner?.name}
+              isVetView={true}
+              onEditProtocol={() => setShowCreateProtocol(true)}
+              onEditDischarge={() => setShowCreateDischarge(true)}
+            />
           </div>
         )}
 
@@ -1530,7 +1628,7 @@ export default function VetPetDetailPage({
       ) : (
         <div className="treatments-stack">
           {treatments.map((treatment) => (
-            <TreatmentPanel key={treatment.id} treatment={treatment} onAddNote={setEditingLog} />
+            <TreatmentPanel key={treatment.id} treatment={treatment} pet={pet} onAddNote={setEditingLog} />
           ))}
         </div>
       )}
